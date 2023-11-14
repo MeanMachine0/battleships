@@ -15,4 +15,4 @@
 
 ## Testing
 1. Open a terminal at the 'battleships' directory.
-2. To run my tests, execute the following command: "pytest test.py", where 'test.py' is replaced with the name of the test file, e.g. 'test_components.py'.
+2. To run my tests, execute the following command: "pytest test.py", where 'test.py' is replaced with the name of the test file, e.g. 'test_components.py'. test
