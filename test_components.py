@@ -1,10 +1,10 @@
 """Tests for components.py"""
-import components
-import pytest
 import random
+import pytest
+import components
 
 @pytest.mark.parametrize("seed", range(999))
-def test_random_battleships_sizes(seed):
+def test_random_battleships_sizes(seed: int) -> None:
     """Checks whether the correct number of each battleship
     is on the board using the random algorithm"""
     ships_checker = components.create_battleships()
@@ -24,7 +24,7 @@ def test_random_battleships_sizes(seed):
     assert ships_test == ships_checker
 
 @pytest.mark.parametrize("seed", range(999))
-def test_random_battleships_adjacent(seed):
+def test_random_battleships_adjacent(seed: int) -> None:
     """Checks whether each battleship placement is adjacent
     using the random algorithm"""
     ships = components.create_battleships()
