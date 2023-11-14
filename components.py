@@ -37,28 +37,34 @@ def place_battleships(board: list[list[None]],
             while len(ships) > 0:
                 name = random.choice(list(ships.keys()))
                 size = ships[name]
-                possible_coordinates = []
-                for i, column in enumerate(board):
-                    for i1 in range(len(board) - size + 1):
-                        if column[i1:i1 + size] == [None] * size:
-                            # places upwards from (i, i1):
-                            possible_coordinates.append((i, i1, 'v'))
-                        if [board[i2][i] for i2 in range(i1, i1 + size)] == [None] * size:
-                            # places rightwards from (i1, i):
-                            possible_coordinates.append((i1, i, 'h'))
-                if len(possible_coordinates) == 0:
+                possible_placements = get_possible_placements(board, size)
+                if len(possible_placements) == 0: # restarts algorithm
                     return place_battleships(
                         initialise_board(),
                         create_battleships(),
                         'random'
                     )
-                coordinates = random.choice(possible_coordinates)
-                if coordinates[2] == 'v':
-                    board[coordinates[0]][coordinates[1]:coordinates[1] + size] = [name] * size
+                placement = random.choice(possible_placements)
+                if placement[2] == 'v':
+                    board[placement[0]][placement[1]:placement[1] + size] = [name] * size
                 else:
-                    for column_index in range(coordinates[0], coordinates[0] + size):
-                        board[column_index][coordinates[1]] = name
+                    for column_index in range(placement[0], placement[0] + size):
+                        board[column_index][placement[1]] = name
                 del ships[name]
         case 'custom':
             pass # do json serialization here
     return board
+
+def get_possible_placements(board, size) -> list[(int, int, str)]:
+    """Returns possible placements in the form
+    (horizontal_coordinate, vertical_coordinate, orientation)"""
+    possible_placements = []
+    for column_index, column in enumerate(board):
+        for row_index in range(len(board) - size + 1):
+            if column[row_index:row_index + size] == [None] * size:
+                            # places upwards from (column_index, row_index):
+                possible_placements.append((column_index, row_index, 'v'))
+            if [board[i][column_index] for i in range(row_index, row_index + size)] == [None] * size:
+                            # places rightwards from (row_index, column_index):
+                possible_placements.append((row_index, column_index, 'h'))
+    return possible_placements
