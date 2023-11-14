@@ -8,7 +8,7 @@ def initialise_board(size=10) -> list[list[None]]:
     Keyword arguments:
     size -- the length of each side of the board (default 10)
     """
-    return [[None for i in range(size)] for i in range(size)]
+    return [[None for _ in range(size)] for _ in range(size)]
 
 print(initialise_board(), '\n')
 
@@ -48,6 +48,12 @@ def place_battleships(board: list[list[None]],
                         if [board[i2][i] for i2 in range(i1, i1 + size)] == [None] * size:
                             # places rightwards from (i1, i):
                             possible_placements.append((i1, i, 'h'))
+                if len(possible_placements) == 0:
+                    return place_battleships(
+                        initialise_board(),
+                        create_battleships(),
+                        'random'
+                    )
                 algorithm = random.choice(possible_placements)
                 if algorithm[2] == 'v':
                     board[algorithm[0]][algorithm[1]:algorithm[1] + size] = [name] * size
@@ -58,5 +64,3 @@ def place_battleships(board: list[list[None]],
         case 'custom':
             pass # do json serialization here
     return board
-
-print(place_battleships(initialise_board(), create_battleships(), 'random'), '\n')
