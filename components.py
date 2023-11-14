@@ -47,7 +47,7 @@ def place_battleships(board: list[list[None]],
                             possible_placements.append((i, i1, 'v'))
                         if [board[i2][i] for i2 in range(i1, i1 + size)] == [None] * size:
                             # places rightwards from (i1, i):
-                            possible_placements.append((i1, i, 'h')) 
+                            possible_placements.append((i1, i, 'h'))
                 algorithm = random.choice(possible_placements)
                 if algorithm[2] == 'v':
                     board[algorithm[0]][algorithm[1]:algorithm[1] + size] = [name] * size
