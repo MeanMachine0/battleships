@@ -54,5 +54,3 @@ def simple_game_loop():
                     break
     with open('ascii/game_over.txt', 'r', encoding='utf-8') as file:
         print(f'\n{file.read()}\n\n')
-
-simple_game_loop()

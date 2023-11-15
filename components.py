@@ -1,6 +1,6 @@
 """Contains functions to setup the components of the game."""
-import random
 import json
+import random
 
 def initialise_board(size=10) -> list[list[None]]:
     """Returns a list of board states.
@@ -68,3 +68,7 @@ def get_possible_placements(board, size) -> list[(int, int, str)]:
                             # places rightwards from (row_index, column_index):
                 possible_placements.append((row_index, column_index, 'h'))
     return possible_placements
+
+if __name__ == '__main__':
+    import game_engine
+    game_engine.simple_game_loop()
