@@ -8,7 +8,7 @@ def initialise_board(size=10) -> list[list[None]]:
     Keyword arguments:
     size -- the length of each side of the board (default 10)
     """
-    return [[None] * 10 for _ in range(size)]
+    return [[None] * size for _ in range(size)]
 
 def create_battleships(filename='battleships.txt') -> dict[int]:
     """Returns a dictionary of battleship names and their
@@ -40,7 +40,7 @@ def place_battleships(board: list[list[None]],
                 possible_placements = get_possible_placements(board, size)
                 if len(possible_placements) == 0: # restarts algorithm
                     return place_battleships(
-                        initialise_board(),
+                        initialise_board(len(board)),
                         create_battleships(),
                         'random'
                     )
