@@ -52,7 +52,7 @@ def place_battleships(board: list[list[None]],
                         board[col_index][placement[1]] = name
                 del ships[name]
         case 'custom':
-            with open('battleships.json', 'r', encoding='utf-8') as board_json:
+            with open('placement.json', 'r', encoding='utf-8') as board_json:
                 board = json.load(board_json)
     return board
 

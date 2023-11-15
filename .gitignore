@@ -1,4 +1,4 @@
 *.pyc
 .venv/
 .vscode/
-battleships.json
+placement.json
