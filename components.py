@@ -14,13 +14,13 @@ def create_battleships(filename='battleships.txt') -> dict[int]:
     """Returns a dictionary of battleship names and their
     respective sizes.
     """
-    battleship_names_and_sizes = {}
+    ships = {}
     with open(filename, 'r', encoding='utf-8') as f:
         for line in f:
             name = line.split(',')[0].strip()
             size = int(line.split(',')[1].strip())
-            battleship_names_and_sizes[name] = size
-    return battleship_names_and_sizes
+            ships[name] = size
+    return ships
 
 def place_battleships(board: list[list[None]],
                       ships: dict[int],
@@ -48,8 +48,8 @@ def place_battleships(board: list[list[None]],
                 if placement[2] == 'v':
                     board[placement[0]][placement[1]:placement[1] + size] = [name] * size
                 else:
-                    for column_index in range(placement[0], placement[0] + size):
-                        board[column_index][placement[1]] = name
+                    for col_index in range(placement[0], placement[0] + size):
+                        board[col_index][placement[1]] = name
                 del ships[name]
         case 'custom':
             pass # do json serialization here
@@ -59,14 +59,14 @@ def get_possible_placements(board, size) -> list[(int, int, str)]:
     """Returns possible placements in the form
     (horizontal_coordinate, vertical_coordinate, orientation)"""
     possible_placements = []
-    for column_index, column in enumerate(board):
+    for col_index, col in enumerate(board):
         for row_index in range(len(board) - size + 1):
-            if column[row_index:row_index + size] == [None] * size:
-                            # places upwards from (column_index, row_index):
-                possible_placements.append((column_index, row_index, 'v'))
-            if [board[i][column_index] for i in range(row_index, row_index + size)] == [None] * size:
-                            # places rightwards from (row_index, column_index):
-                possible_placements.append((row_index, column_index, 'h'))
+            if col[row_index:row_index + size] == [None] * size:
+                            # places upwards from (col_index, row_index):
+                possible_placements.append((col_index, row_index, 'v'))
+            if [board[i][col_index] for i in range(row_index, row_index + size)] == [None] * size:
+                            # places rightwards from (row_index, col_index):
+                possible_placements.append((row_index, col_index, 'h'))
     return possible_placements
 
 if __name__ == '__main__':

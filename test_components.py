@@ -17,8 +17,8 @@ def test_random_battleships_sizes(seed: int) -> None:
         ships=components.create_battleships(),
         algorithm='random'
     )
-    for column in random_board:
-        for value in column:
+    for col in random_board:
+        for value in col:
             if value is not None:
                 ships_test[value] += 1
     assert ships_test == ships_checker
@@ -34,15 +34,15 @@ def test_random_battleships_adjacent(seed: int) -> None:
         ships=components.create_battleships(),
         algorithm='random'
     )
-    ships_coordinates = {
+    ships_coords = {
         ship_name: [] for ship_name in ships
     }
-    for column_index, column in enumerate(random_board):
-        for row_index, value in enumerate(column):
+    for col_index, col in enumerate(random_board):
+        for row_index, value in enumerate(col):
             if value is not None:
-                ships_coordinates[value].append([column_index, row_index])
-    for coordinates in ships_coordinates.values():
-        horizontal_coordinate = coordinates[0][0]
-        vertical_coordinate = coordinates[0][1]
-        for coordinate_pair in coordinates:
-            assert coordinate_pair[0] == horizontal_coordinate or coordinate_pair[1] == vertical_coordinate
+                ships_coords[value].append([col_index, row_index])
+    for coord_pairs in ships_coords.values():
+        horizontal_coord = coord_pairs[0][0]
+        vertical_coord = coord_pairs[0][1]
+        for coord_pair in coord_pairs:
+            assert coord_pair[0] == horizontal_coord or coord_pair[1] == vertical_coord
