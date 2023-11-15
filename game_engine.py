@@ -37,7 +37,7 @@ def simple_game_loop():
         print(f'\n{file.read()}\n\n')
     board = components.initialise_board()
     ships = components.create_battleships()
-    components.place_battleships(board, ships.copy())
+    board = components.place_battleships(board, ships.copy(), 'custom')
     while len(ships) > 0:
         attack_coords = cli_coordinates_input()
         if attack_coords[0] >= len(board) or attack_coords[1] >= len(board):

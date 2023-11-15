@@ -8,7 +8,7 @@ def initialise_board(size=10) -> list[list[None]]:
     Keyword arguments:
     size -- the length of each side of the board (default 10)
     """
-    return [[None for _ in range(size)] for _ in range(size)]
+    return [[None] * 10 for _ in range(size)]
 
 def create_battleships(filename='battleships.txt') -> dict[int]:
     """Returns a dictionary of battleship names and their
@@ -52,7 +52,8 @@ def place_battleships(board: list[list[None]],
                         board[col_index][placement[1]] = name
                 del ships[name]
         case 'custom':
-            pass # do json serialization here
+            with open('battleships.json', 'r', encoding='utf-8') as board_json:
+                board = json.load(board_json)
     return board
 
 def get_possible_placements(board, size) -> list[(int, int, str)]:
