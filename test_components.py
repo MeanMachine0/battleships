@@ -14,7 +14,7 @@ def test_random_battleships_sizes(seed: int) -> None:
     random.seed(seed)
     random_board = components.place_battleships(
         board=components.initialise_board(),
-        ships=components.create_battleships(),
+        ships=ships_checker.copy(),
         algorithm='random'
     )
     for col in random_board:
@@ -31,7 +31,7 @@ def test_random_battleships_adjacent(seed: int) -> None:
     random.seed(seed)
     random_board = components.place_battleships(
         board=components.initialise_board(),
-        ships=components.create_battleships(),
+        ships=ships.copy(),
         algorithm='random'
     )
     ships_coords = {
