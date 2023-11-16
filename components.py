@@ -31,7 +31,10 @@ def place_battleships(board: list[list[None]],
     algorithms -- simple/random/custom (default simple)"""
     match algorithm:
         case 'simple':
-            for index, (name, size) in enumerate(ships.items()):
+            if len(ships) > len(board) or max(ships.values()) > len(board):
+                print('Invalid configuration: the ships do not fit on the board.')
+                return None
+            for index, (name, size) in enumerate(ships.items()):    
                 board[index][:size] = [name] * size
         case 'random':
             while len(ships) > 0:
