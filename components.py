@@ -39,11 +39,15 @@ def place_battleships(board: list[list[None]],
                 size = ships[name]
                 possible_placements = get_possible_placements(board, size)
                 if len(possible_placements) == 0: # restarts algorithm
-                    return place_battleships(
-                        initialise_board(len(board)),
-                        create_battleships(),
-                        'random'
-                    )
+                    try:
+                        return place_battleships(
+                            initialise_board(len(board)),
+                            create_battleships(),
+                            'random'
+                        )
+                    except RecursionError:
+                        print('Invalid configuration: the ships do not fit on the board.')
+                        return None
                 placement = random.choice(possible_placements)
                 if placement[2] == 'v':
                     board[placement[0]][placement[1]:placement[1] + size] = [name] * size
