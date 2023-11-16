@@ -31,13 +31,15 @@ def cli_coordinates_input() -> (int, int):
             attack_coordinates = (horizontal_coordinate, vertical_coordinate)
             return attack_coordinates
 
-def simple_game_loop():
+def simple_game_loop() -> None:
     """Play by yourself, with no opponent attacking you."""
     with open('ascii/battleships.txt', 'r', encoding='utf-8') as file:
         print(f'\n{file.read()}\n\n')
     board = components.initialise_board()
     ships = components.create_battleships()
-    board = components.place_battleships(board, ships.copy(), 'custom')
+    board = components.place_battleships(board, ships.copy())
+    if board is None:
+        return
     while len(ships) > 0:
         attack_coords = cli_coordinates_input()
         if attack_coords[0] >= len(board) or attack_coords[1] >= len(board):
