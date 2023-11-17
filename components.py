@@ -61,6 +61,10 @@ def place_battleships(board: list[list[None]],
         case 'custom':
             with open('placement.json', 'r', encoding='utf-8') as board_json:
                 board = json.load(board_json)
+                for col in board:
+                    if len(col) != len(board):
+                        print('Invalid board dimensions: the board must be square.')
+                        return None
     return board
 
 def get_possible_placements(board, size) -> list[(int, int, str)]:
