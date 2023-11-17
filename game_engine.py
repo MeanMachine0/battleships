@@ -2,7 +2,7 @@
 import components
 
 def attack(coordinates: (int, int),
-           board: list[list[None or int]],
+           board: list[list[None | str]],
            battleships: dict[int]) -> bool:
     """Checks whether there is a ship at the given coordinates.
     If there is a ship at said coordinates, the ship is set to None on the board,
@@ -20,16 +20,17 @@ def cli_coordinates_input() -> (int, int):
     """Recieves, processes, and returns coordinates."""
     while True:
         raw_input = input("Enter the coordinates you would like to attack: ")
-        stripped_input = raw_input.strip()
-        first_char = stripped_input[0]
-        trailing_chars = stripped_input[1:]
-        if not first_char.isalpha() or not trailing_chars.isnumeric():
-            print('Invalid coordinates: please enter a letter followed by a number, e.g. A1')
-        else:
-            horizontal_coordinate = ord(first_char.upper()) - 65 # ord('A') returns 65
-            vertical_coordinate = int(trailing_chars) - 1
-            attack_coordinates = (horizontal_coordinate, vertical_coordinate)
-            return attack_coordinates
+        if len(raw_input) > 0:
+            stripped_input = raw_input.strip()
+            first_char = stripped_input[0]
+            trailing_chars = stripped_input[1:]
+            if not first_char.isalpha() or not trailing_chars.isnumeric():
+                print('Invalid coordinates: please enter a letter followed by a number, e.g. A1')
+            else:
+                horizontal_coord = ord(first_char.upper()) - 65 # ord('A') returns 65
+                vertical_coord = int(trailing_chars) - 1
+                attack_coords = (horizontal_coord, vertical_coord)
+                return attack_coords
 
 def simple_game_loop() -> None:
     """Play by yourself, with no opponent attacking you."""
@@ -46,16 +47,17 @@ def simple_game_loop() -> None:
     with open('ascii/game_over.txt', 'r', encoding='utf-8') as file:
         print(f'\n{file.read()}\n\n')
 
-def process_attack(board, ships, attack_coords):
+def process_attack(board, ships, attack_coords) -> bool:
     """Validates attack coordinates, processes the attack, prints relevant information,
-    and ends the game when over."""
+    and ends the game when over. Returns validity of attack."""
     if attack_coords[0] >= len(board) or attack_coords[1] >= len(board):
         print('Invalid coordinates: out of range.')
-    else:
-        ships_before_attack = list(ships.keys())
-        hit = attack(attack_coords, board, ships)
-        print('Hit!' if hit else 'Missed!')
-        for i, ship in enumerate(ships_before_attack):
-            if len(ships) == 0 or i == len(ships) or ship != list(ships.keys())[i]:
-                print(f'{ship} sunk!')
-                break
+        return False
+    ships_before_attack = list(ships.keys())
+    hit = attack(attack_coords, board, ships)
+    print('Hit!' if hit else 'Missed!')
+    for i, ship in enumerate(ships_before_attack):
+        if len(ships) == 0 or i == len(ships) or ship != list(ships.keys())[i]:
+            print(f'{ship} sunk!')
+            break
+    return True
