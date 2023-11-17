@@ -69,7 +69,7 @@ def place_battleships(board: list[list[None]],
 
 def get_possible_placements(board, size) -> list[(int, int, str)]:
     """Returns possible placements in the form
-    (horizontal_coordinate, vertical_coordinate, orientation)"""
+    (horizontal_coord, vertical_coord, orientation)"""
     possible_placements = []
     for col_index, col in enumerate(board):
         for row_index in range(len(board) - size + 1):
