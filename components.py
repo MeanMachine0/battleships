@@ -24,7 +24,7 @@ def create_battleships(filename='battleships.txt') -> dict[int]:
 
 def place_battleships(board: list[list[None]],
                       ships: dict[int],
-                      algorithm='simple') -> list[list[str or None]]:
+                      algorithm='simple') -> list[list[str | None]]:
     """Returns a board with battleships placed on it.
 
     Keyword Arguments:
