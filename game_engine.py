@@ -27,8 +27,8 @@ def cli_coordinates_input() -> (int, int):
             if not first_char.isalpha() or not trailing_chars.isnumeric():
                 print('Invalid coordinates: please enter a letter followed by a number, e.g. A1')
             else:
-                horizontal_coord = ord(first_char.upper()) - 65 # ord('A') returns 65
-                vertical_coord = int(trailing_chars) - 1
+                horizontal_coord = int(trailing_chars) - 1
+                vertical_coord = ord(first_char.upper()) - 65 # ord('A') returns 65
                 attack_coords = (horizontal_coord, vertical_coord)
                 return attack_coords
 
