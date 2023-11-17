@@ -34,8 +34,8 @@ def generate_attack() -> (int, int):
 
 def ai_opponent_game_loop() -> None:
     """Play against the computer."""
-    with open('ascii/battleships.txt', 'r', encoding='utf-8') as file:
-        print(f'\n{file.read()}\n\n')
+    with open('ascii/battleships.txt', 'r', encoding='utf-8') as welcome:
+        print(f'\n{welcome.read()}\n\n')
     players['you']['board'] = components.place_battleships(
         board=None,
         ships=None,
@@ -72,7 +72,13 @@ def ai_opponent_game_loop() -> None:
             players['you']['ships'],
             attack_coords
         )
-    with open('ascii/game_over.txt', 'r', encoding='utf-8') as file:
-        print(f'\n{file.read()}\n\n')
+    with open('ascii/game_over.txt', 'r', encoding='utf-8') as game_over:
+        print(f'\n\n{game_over.read()}\n\n\n')
+    if len(players['you']['ships']) == 0:
+        with open('ascii/you_lost.txt', 'r', encoding='utf-8') as you_lost:
+            print(f'{you_lost.read()}\n\n')
+    else:
+        with open('ascii/you_won.txt', 'r', encoding='utf-8') as you_won:
+            print(f'{you_won.read()}\n\n')
 
 ai_opponent_game_loop()

@@ -34,8 +34,8 @@ def cli_coordinates_input() -> (int, int):
 
 def simple_game_loop() -> None:
     """Play by yourself, with no opponent attacking you."""
-    with open('ascii/battleships.txt', 'r', encoding='utf-8') as file:
-        print(f'\n{file.read()}\n\n')
+    with open('ascii/welcome.txt', 'r', encoding='utf-8') as welcome:
+        print(f'\n{welcome.read()}\n\n')
     board = components.initialise_board()
     ships = components.create_battleships()
     board = components.place_battleships(board, ships.copy())
@@ -44,8 +44,8 @@ def simple_game_loop() -> None:
     while len(ships) > 0:
         attack_coords = cli_coordinates_input()
         process_attack(board, ships, attack_coords)
-    with open('ascii/game_over.txt', 'r', encoding='utf-8') as file:
-        print(f'\n{file.read()}\n\n')
+    with open('ascii/game_over.txt', 'r', encoding='utf-8') as game_over:
+        print(f'\n{game_over.read()}\n\n')
 
 def process_attack(board, ships, attack_coords) -> bool:
     """Validates attack coordinates, processes the attack, prints relevant information,
