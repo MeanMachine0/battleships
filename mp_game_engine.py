@@ -10,18 +10,21 @@ players = {
     },
     'ai': {
         'ships': {},
-        'board': {}
+        'board': {},
+        'possible_attacks': []
     }
 }
 
 def generate_attack() -> (int, int):
     """Returns coordinates to attack the player."""
-    board_size = len(players['you'])
-    possible_attacks = [[None] * board_size for _ in range(board_size)]
-    for col_index in range(board_size):
-        for row_index in range(board_size):
-            possible_attacks[col_index][row_index] = (col_index, row_index)
-    return random.choice(possible_attacks)
+    if len(players['ai']['possible_attacks']) == 0:
+        board_size = len(players['you']['board'])
+        for col_index in range(board_size):
+            for row_index in range(board_size):
+                players['ai']['possible_attacks'].append((col_index, row_index))
+    attack_coords = random.choice(players['ai']['possible_attacks'])
+    players['ai']['possible_attacks'].remove(attack_coords)
+    return attack_coords
 
 # def generate_attack() -> (int, int):
 #     """Returns coordinates to attack the player."""
@@ -48,18 +51,27 @@ def ai_opponent_game_loop() -> None:
     players['ai']['ships'] = players['you']['ships'].copy()
     players['ai']['board'] = components.place_battleships(
         board=components.initialise_board(len(players['you']['board'])),
-        ships=components.create_battleships(),
+        ships=players['you']['ships'].copy(),
         algorithm='random'
     )
     if players['you'] is None or players['ai'] is None:
         return
     while len(players['you']['ships']) > 0 and len(players['ai']['ships']) > 0:
-        attack_coords = game_engine.cli_coordinates_input()
+        valid_attack = False
+        while not valid_attack:
+            attack_coords = game_engine.cli_coordinates_input()
+            valid_attack = game_engine.process_attack(
+                players['ai']['board'],
+                players['ai']['ships'],
+                attack_coords
+                )
+        print('Opponent is attacking...')
+        attack_coords = generate_attack()
         game_engine.process_attack(
-            players['ai']['board'],
-            players['ai']['ships'],
+            players['you']['board'],
+            players['you']['ships'],
             attack_coords
-            )
+        )
     with open('ascii/game_over.txt', 'r', encoding='utf-8') as file:
         print(f'\n{file.read()}\n\n')
 
