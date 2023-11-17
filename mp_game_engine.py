@@ -51,7 +51,7 @@ def ai_opponent_game_loop() -> None:
     )
     if players['you'] is None or players['ai'] is None:
         return
-    col_names = [str(i + 1) for i in range(board_size)]
+    col_names = [str((i + 1) % 10) for i in range(board_size)]
     col_names.insert(0, ' ')
     col_names_string = ' '.join(col_names)
     while len(players['you']['ships']) > 0 and len(players['ai']['ships']) > 0:
