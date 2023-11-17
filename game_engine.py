@@ -42,15 +42,20 @@ def simple_game_loop() -> None:
         return
     while len(ships) > 0:
         attack_coords = cli_coordinates_input()
-        if attack_coords[0] >= len(board) or attack_coords[1] >= len(board):
-            print('Invalid coordinates: out of range.')
-        else:
-            ships_before_attack = list(ships.keys())
-            hit = attack(attack_coords, board, ships)
-            print('Hit!' if hit else 'Missed!')
-            for i, ship in enumerate(ships_before_attack):
-                if len(ships) == 0 or i == len(ships) or ship != list(ships.keys())[i]:
-                    print(f'{ship} sunk!')
-                    break
+        process_attack(board, ships, attack_coords)
     with open('ascii/game_over.txt', 'r', encoding='utf-8') as file:
         print(f'\n{file.read()}\n\n')
+
+def process_attack(board, ships, attack_coords):
+    """Validates attack coordinates, processes the attack, prints relevant information,
+    and ends the game when over."""
+    if attack_coords[0] >= len(board) or attack_coords[1] >= len(board):
+        print('Invalid coordinates: out of range.')
+    else:
+        ships_before_attack = list(ships.keys())
+        hit = attack(attack_coords, board, ships)
+        print('Hit!' if hit else 'Missed!')
+        for i, ship in enumerate(ships_before_attack):
+            if len(ships) == 0 or i == len(ships) or ship != list(ships.keys())[i]:
+                print(f'{ship} sunk!')
+                break
