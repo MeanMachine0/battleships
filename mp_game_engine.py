@@ -34,7 +34,7 @@ def generate_attack() -> (int, int):
 
 def ai_opponent_game_loop() -> None:
     """Play against the computer."""
-    with open('ascii/battleships.txt', 'r', encoding='utf-8') as welcome:
+    with open('ascii/welcome.txt', 'r', encoding='utf-8') as welcome:
         print(f'\n{welcome.read()}\n\n')
     players['you']['board'] = components.place_battleships(
         board=None,
@@ -72,6 +72,7 @@ def ai_opponent_game_loop() -> None:
             players['you']['ships'],
             attack_coords
         )
+        print(f'{chr(i)} ' for i in range(65, 65 + len(players['you']['board'])))
     with open('ascii/game_over.txt', 'r', encoding='utf-8') as game_over:
         print(f'\n\n{game_over.read()}\n\n\n')
     if len(players['you']['ships']) == 0:
