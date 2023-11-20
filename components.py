@@ -58,15 +58,26 @@ def place_battleships(board: list[list[None]],
         case 'custom':
             with open('placement.json', 'r', encoding='utf-8') as placements_json:
                 placements = json.load(placements_json)
+                expected_ship_coverage = 0
                 for name, placement in placements.items():
                     try:
                         placement[0] = int(placement[0])
                         placement[1] = int(placement[1])
                         place_ship(board, name, ships[name], placement)
+                        expected_ship_coverage += ships[name]
                     except IndexError:
                         print('Invalid configuration: could not place ships',
                               'accordingly to "placement.json".')
                         return None
+                # Validates ship coverage:
+                ship_coverage = 0
+                for col in board:
+                    for value in col:
+                        if value is not None:
+                            ship_coverage += 1
+                if ship_coverage != expected_ship_coverage:
+                    print('Invalid configuration: two or more ships overlap.')
+                    return None
     return board
 
 def get_possible_placements(board, size) -> list[(int, int, str)]:
