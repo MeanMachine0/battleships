@@ -15,6 +15,17 @@ def root():
     print(player_board)
     return render_template('main.html', player_board=player_board)
 
+@app.route('/attack', methods=['GET'])
+def attack():
+    """
+    Gets parameters x and y and attacks accordingly.
+    """
+    if request.args:
+        horizontal_coord = request.args.get('x')
+        vertical_coord = request.args.get('y')
+        print(horizontal_coord, vertical_coord)
+        # mp_game_engine.ai_opponent_game_loop
+
 @app.route('/placement', methods=['GET', 'POST'])
 def placement_interface():
     """
@@ -27,9 +38,9 @@ def placement_interface():
     if request.method == 'GET':
         return render_template('placement.html', ships=ships, board_size=board_size)
     if request.method == 'POST':
-        data = request.get_json()
+        placements_data = request.get_json()
         with open('placement.json', 'w', encoding='utf-8') as placements_json:
-            json.dump(data, placements_json, indent=2)
+            json.dump(placements_data, placements_json, indent=2)
         global player_board
         player_board = components.place_battleships(initial_board, ships, 'custom')
         for col in player_board:
