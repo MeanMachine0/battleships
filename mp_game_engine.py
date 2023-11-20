@@ -31,10 +31,12 @@ def ai_opponent_game_loop() -> None:
     with open('ascii/welcome.txt', 'r', encoding='utf-8') as welcome:
         print(f'\n{welcome.read()}\n\n')
     players['you']['board'] = components.place_battleships(
-        board=None,
-        ships=None,
+        board=components.initialise_board(),
+        ships=components.create_battleships(),
         algorithm='custom'
     )
+    if players['you']['board'] is None:
+        return
     board_size = len(players['you']['board'])
     for col in players['you']['board']:
         for value in col:
