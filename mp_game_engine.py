@@ -5,8 +5,8 @@ import game_engine
 
 players = {
     'you': {
-        'ships': {},
-        'board': {}
+        'ships': components.create_battleships(),
+        'board': components.initialise_board()
     },
     'ai': {
         'ships': {},
@@ -38,13 +38,6 @@ def ai_opponent_game_loop() -> None:
     if players['you']['board'] is None:
         return
     board_size = len(players['you']['board'])
-    for col in players['you']['board']:
-        for value in col:
-            if value is not None:
-                if value not in players['you']['ships']:
-                    players['you']['ships'][value] = 1
-                else:
-                    players['you']['ships'][value] += 1
     players['ai']['ships'] = players['you']['ships'].copy()
     players['ai']['board'] = components.place_battleships(
         board=components.initialise_board(board_size),
