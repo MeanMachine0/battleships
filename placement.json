@@ -1,0 +1,27 @@
+{
+  "Aircraft_Carrier": [
+    "3",
+    "2",
+    "h"
+  ],
+  "Battleship": [
+    "2",
+    "6",
+    "h"
+  ],
+  "Cruiser": [
+    "4",
+    "8",
+    "h"
+  ],
+  "Submarine": [
+    "2",
+    "9",
+    "h"
+  ],
+  "Destroyer": [
+    "3",
+    "7",
+    "v"
+  ]
+}
