@@ -64,7 +64,8 @@ def place_battleships(board: list[list[None]],
                         placement[1] = int(placement[1])
                         place_ship(board, name, ships[name], placement)
                     except IndexError:
-                        print('Error: could not place ships accordingly to "placement.json".')
+                        print('Invalid configuration: could not place ships',
+                              'accordingly to "placement.json".')
                         return None
     return board
 
@@ -82,9 +83,12 @@ def get_possible_placements(board, size) -> list[(int, int, str)]:
                 possible_placements.append((row_index, col_index, 'h'))
     return possible_placements
 
-def place_ship(board: list[list[None | str]], name: str, size: int, placement: list[int, int, str]):
+def place_ship(board: list[list[None | str]], name: str,
+               size: int, placement: list[int, int, str]) -> None:
     """Writes the name of a ship on the board, accordingly to a placement."""
     if placement[2] == 'v':
+        if placement[1] + size > len(board):
+            raise IndexError
         board[placement[0]][placement[1]:placement[1] + size] = [name] * size
     else:
         for col_index in range(placement[0], placement[0] + size):
