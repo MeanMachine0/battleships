@@ -19,9 +19,9 @@ def generate_attack() -> (int, int):
     """Returns coordinates to attack the player."""
     if len(players['ai']['possible_attacks']) == 0:
         board_size = len(players['you']['board'])
-        for col_index in range(board_size):
-            for row_index in range(board_size):
-                players['ai']['possible_attacks'].append((col_index, row_index))
+        for y in range(board_size):
+            for x in range(board_size):
+                players['ai']['possible_attacks'].append((x, y))
     attack_coords = random.choice(players['ai']['possible_attacks'])
     players['ai']['possible_attacks'].remove(attack_coords)
     return attack_coords
@@ -69,7 +69,7 @@ def ai_opponent_game_loop() -> None:
         for i in range(board_size):
             row = [chr(65 + i)]
             for i1 in range(board_size):
-                row.append('-' if players['you']['board'][i1][i] is None else 'X')
+                row.append('-' if players['you']['board'][i][i1] is None else 'X')
             row_string = ' '.join(row)
             print(row_string)
         print('\n')

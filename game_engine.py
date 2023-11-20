@@ -4,12 +4,14 @@ import components
 def attack(coordinates: (int, int),
            board: list[list[None | str]],
            battleships: dict[int]) -> bool:
-    """Checks whether there is a ship at the given coordinates.
+    """
+    Checks whether there is a ship at the given coordinates.
     If there is a ship at said coordinates, the ship is set to None on the board,
-    and the dict value of said ship is decremented."""
-    value_at_coords = board[coordinates[0]][coordinates[1]]
+    and the dict value of said ship is decremented.
+    """
+    value_at_coords = board[coordinates[1]][coordinates[0]]
     if value_at_coords is not None:
-        board[coordinates[0]][coordinates[1]] = None
+        board[coordinates[1]][coordinates[0]] = None
         battleships[value_at_coords] -= 1
         if battleships[value_at_coords] == 0:
             del battleships[value_at_coords]
@@ -27,9 +29,9 @@ def cli_coordinates_input() -> (int, int):
             if not first_char.isalpha() or not trailing_chars.isnumeric():
                 print('Invalid coordinates: please enter a letter followed by a number, e.g. A1')
             else:
-                horizontal_coord = int(trailing_chars) - 1
-                vertical_coord = ord(first_char.upper()) - 65 # ord('A') returns 65
-                attack_coords = (horizontal_coord, vertical_coord)
+                y = ord(first_char.upper()) - 65 # ord('A') returns 65
+                x = int(trailing_chars) - 1
+                attack_coords = (x, y)
                 return attack_coords
 
 def simple_game_loop() -> None:
@@ -48,8 +50,10 @@ def simple_game_loop() -> None:
         print(f'\n{game_over.read()}\n\n')
 
 def process_attack(board, ships, attack_coords) -> bool:
-    """Validates attack coordinates, processes the attack, prints relevant information,
-    and ends the game when over. Returns validity of attack."""
+    """
+    Validates attack coordinates, processes the attack, prints relevant information,
+    and ends the game when over. Returns validity of attack.
+    """
     if attack_coords[0] >= len(board) or attack_coords[1] >= len(board):
         print('Invalid coordinates: out of range.')
         return False

@@ -17,20 +17,17 @@ def root():
 
 @app.route('/attack', methods=['GET'])
 def attack():
-    """
-    Gets parameters x and y and attacks accordingly.
-    """
+    """Gets parameters x and y and attacks accordingly."""
     if request.args:
-        horizontal_coord = request.args.get('x')
-        vertical_coord = request.args.get('y')
-        print(horizontal_coord, vertical_coord)
-        # mp_game_engine.ai_opponent_game_loop
+        x = request.args.get('x')
+        y = request.args.get('y')
+    return jsonify((x, y))
 
 @app.route('/placement', methods=['GET', 'POST'])
 def placement_interface():
     """
     Posts the player's board in the same format as placement.json and
-    gets the placement template with the ships and board size
+    gets the placement template with the ships and board size.
     """
     board_size = 10
     initial_board = components.initialise_board(board_size)
@@ -43,10 +40,8 @@ def placement_interface():
             json.dump(placements_data, placements_json, indent=2)
         global player_board
         player_board = components.place_battleships(initial_board, ships, 'custom')
-        for col in player_board:
-            print(col)
     return jsonify({'message': 'success'})
 
 if __name__ == '__main__':
     app.template_folder = 'templates'
-    app.run()
+    app.run(debug=True)

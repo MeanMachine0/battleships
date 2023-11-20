@@ -11,9 +11,7 @@ def initialise_board(size=10) -> list[list[None]]:
     return [[None] * size for _ in range(size)]
 
 def create_battleships(filename='battleships.txt') -> dict[int]:
-    """Returns a dictionary of battleship names and their
-    respective sizes.
-    """
+    """Returns a dictionary of battleship names and their respective sizes."""
     ships = {}
     with open(filename, 'r', encoding='utf-8') as f:
         for line in f:
@@ -29,7 +27,8 @@ def place_battleships(board: list[list[None]],
     """Returns a board with battleships placed on it.
 
     Keyword Arguments:
-    algorithms -- simple/random/custom (default simple)"""
+    algorithms -- simple/random/custom (default simple)
+    """
     match algorithm:
         case 'simple':
             if len(ships) > len(board) or max(ships.values()) > len(board):
@@ -71,8 +70,8 @@ def place_battleships(board: list[list[None]],
                         return None
                 # Validates ship coverage:
                 ship_coverage = 0
-                for col in board:
-                    for value in col:
+                for row in board:
+                    for value in row:
                         if value is not None:
                             ship_coverage += 1
                 if ship_coverage != expected_ship_coverage:
@@ -81,29 +80,28 @@ def place_battleships(board: list[list[None]],
     return board
 
 def get_possible_placements(board, size) -> list[(int, int, str)]:
-    """Returns possible placements in the form
-    (horizontal_coord, vertical_coord, orientation)"""
+    """Returns possible placements in the form (x, y, orientation)."""
     possible_placements = []
-    for col_index, col in enumerate(board):
-        for row_index in range(len(board) - size + 1):
-            if col[row_index:row_index + size] == [None] * size:
-                            # places upwards from (col_index, row_index):
-                possible_placements.append((col_index, row_index, 'v'))
-            if [board[i][col_index] for i in range(row_index, row_index + size)] == [None] * size:
-                            # places rightwards from (row_index, col_index):
-                possible_placements.append((row_index, col_index, 'h'))
+    for y, row in enumerate(board):
+        for x in range(len(board) - size + 1):
+            if row[x:x + size] == [None] * size:
+                # places rightwards from (x, y):
+                possible_placements.append((x, y, 'h'))
+            if [board[i][y] for i in range(x, x + size)] == [None] * size:
+                # places upwards from (y, x):
+                possible_placements.append((y, x, 'v'))
     return possible_placements
 
 def place_ship(board: list[list[None | str]], name: str,
                size: int, placement: list[int, int, str]) -> None:
     """Writes the name of a ship on the board, accordingly to a placement."""
-    if placement[2] == 'v':
-        if placement[1] + size > len(board):
+    if placement[2] == 'h':
+        if placement[0] + size > len(board):
             raise IndexError
-        board[placement[0]][placement[1]:placement[1] + size] = [name] * size
+        board[placement[1]][placement[0]:placement[0] + size] = [name] * size
     else:
-        for col_index in range(placement[0], placement[0] + size):
-            board[col_index][placement[1]] = name
+        for y in range(placement[1], placement[1] + size):
+            board[y][placement[0]] = name
 
 if __name__ == '__main__':
     import game_engine
