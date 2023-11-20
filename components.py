@@ -17,8 +17,9 @@ def create_battleships(filename='battleships.txt') -> dict[int]:
     ships = {}
     with open(filename, 'r', encoding='utf-8') as f:
         for line in f:
-            name = line.split(',')[0].strip()
-            size = int(line.split(',')[1].strip())
+            parts = line.split(':')
+            name = parts[0].strip()
+            size = int(parts[1].strip())
             ships[name] = size
     return ships
 
@@ -34,8 +35,8 @@ def place_battleships(board: list[list[None]],
             if len(ships) > len(board) or max(ships.values()) > len(board):
                 print('Invalid configuration: the ships do not fit on the board.')
                 return None
-            for index, (name, size) in enumerate(ships.items()):    
-                board[index][:size] = [name] * size
+            for index, (name, size) in enumerate(ships.items()):
+                place_ship(board, name, size, [0, index, 'h'])
         case 'random':
             while len(ships) > 0:
                 name = random.choice(list(ships.keys()))
@@ -52,18 +53,18 @@ def place_battleships(board: list[list[None]],
                         print('Invalid configuration: the ships do not fit on the board.')
                         return None
                 placement = random.choice(possible_placements)
-                if placement[2] == 'v':
-                    board[placement[0]][placement[1]:placement[1] + size] = [name] * size
-                else:
-                    for col_index in range(placement[0], placement[0] + size):
-                        board[col_index][placement[1]] = name
+                place_ship(board, name, size, placement)
                 del ships[name]
         case 'custom':
-            with open('placement.json', 'r', encoding='utf-8') as board_json:
-                board = json.load(board_json)
-                for col in board:
-                    if len(col) != len(board):
-                        print('Invalid board dimensions: the board must be square.')
+            with open('placement.json', 'r', encoding='utf-8') as placements_json:
+                placements = json.load(placements_json)
+                for name, placement in placements.items():
+                    try:
+                        placement[0] = int(placement[0])
+                        placement[1] = int(placement[1])
+                        place_ship(board, name, ships[name], placement)
+                    except IndexError:
+                        print('Error: could not place ships accordingly to "placement.json".')
                         return None
     return board
 
@@ -80,6 +81,14 @@ def get_possible_placements(board, size) -> list[(int, int, str)]:
                             # places rightwards from (row_index, col_index):
                 possible_placements.append((row_index, col_index, 'h'))
     return possible_placements
+
+def place_ship(board: list[list[None | str]], name: str, size: int, placement: list[int, int, str]):
+    """Writes the name of a ship on the board, accordingly to a placement."""
+    if placement[2] == 'v':
+        board[placement[0]][placement[1]:placement[1] + size] = [name] * size
+    else:
+        for col_index in range(placement[0], placement[0] + size):
+            board[col_index][placement[1]] = name
 
 if __name__ == '__main__':
     import game_engine
