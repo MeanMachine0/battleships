@@ -88,5 +88,3 @@ def ai_opponent_game_loop() -> None:
     else:
         with open('ascii/you_won.txt', 'r', encoding='utf-8') as you_won:
             print(f'{you_won.read()}\n\n')
-
-ai_opponent_game_loop()
