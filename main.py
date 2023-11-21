@@ -109,7 +109,7 @@ def placement_interface():
             for x in range(board_size):
                 ai['possible_attacks'][((x, y))] = 1
         you['ships'] = components.create_battleships()
-        ai['ships_not_sunk'] = you['ships'].copy()
+        ai['ships_not_sunk'] = list(you['ships'].keys())
         you['board'] = components.place_battleships(
             components.initialise_board(board_size),
             you['ships'].copy(),
