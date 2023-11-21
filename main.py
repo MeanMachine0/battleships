@@ -18,7 +18,11 @@ ai = {
     'board': [],
     'possible_attacks': {},
     'preferable_attacks': [],
-    'sizes_ships_not_sunk': []
+    'ships_not_sunk': {},
+    'ship_found': False,
+    'first_hit': (),
+    'direction': [],
+    'last_attack': ()
 }
 
 def initialise_players() -> None:
@@ -35,7 +39,11 @@ def initialise_players() -> None:
         'board': [],
         'possible_attacks': {},
         'preferable_attacks': [],
-        'sizes_ships_not_sunk': []
+        'ships_not_sunk': {},
+        'ship_found': False,
+        'first_hit': (),
+        'direction': [],
+        'last_attack': ()
     }
 
 @app.route('/', methods=['GET'])
@@ -65,13 +73,32 @@ def attack():
         you['attacks'].append(attack_coords)
         num_ships_before = len(you['ships'])
         ai_attack_coords = generate_attack()
-        size_at_ai_attack = you['board'][ai_attack_coords[1]][ai_attack_coords[0]]
+        ai['last_attack'] = ai_attack_coords
+        ship_at_ai_attack = you['board'][ai_attack_coords[1]][ai_attack_coords[0]]
         ai_hit = game_engine.attack(ai_attack_coords,
                            you['board'],
                            you['ships'])
+        if not ai_hit and len(ai['direction']) > 0:
+            ai['direction'][0] = (-1) * ai['direction'][0]
+            ai['direction'][1] = (-1) * ai['direction'][1]
         if ai_hit:
+            if not ai['ship_found']:
+                ai['ship_found'] = True
+                ai['first_hit'] = ai_attack_coords
+            else:
+                last_x = ai['first_hit'][0]
+                last_y = ai['first_hit'][1]
+                x = ai_attack_coords[0]
+                y = ai_attack_coords[1]
+                x_dif = x - last_x
+                y_dif = y - last_y
+                x_dir = get_dir(x_dif)
+                y_dir = get_dir(y_dif)
+                ai['direction'] = [x_dir, y_dir]
             if len(you['ships']) < num_ships_before:
-                ai['sizes_ships_not_sunk'].remove(size_at_ai_attack)
+                del ai['ships_not_sunk'][ship_at_ai_attack]
+                ai['direction'].clear()
+                ai['ship_found'] = False
             board_size = len(you['board'])
             for i, coord in enumerate(ai_attack_coords):
                 other_coord = ai_attack_coords[-(i + 1)]
@@ -111,7 +138,7 @@ def placement_interface():
             for x in range(board_size):
                 ai['possible_attacks'][((x, y))] = 0
         you['ships'] = components.create_battleships()
-        ai['sizes_ships_not_sunk'] = you['ships'].values()
+        ai['ships_not_sunk'] = you['ships'].copy()
         you['board'] = components.place_battleships(
             components.initialise_board(board_size),
             you['ships'].copy(),
@@ -138,7 +165,7 @@ def generate_attack() -> (int, int):
     for coords in possible_attack_coords:
         ai['possible_attacks'][coords] = 0
     board_size = len(you['board'])
-    for size in ai['sizes_ships_not_sunk']:
+    for size in list(ai['ships_not_sunk'].values()):
         for coords in possible_attack_coords:
             for i, coord in enumerate(coords):
                 other_coord = coords[-(i + 1)]
@@ -158,25 +185,43 @@ def generate_attack() -> (int, int):
                                 for i2 in range(coord, i1):
                                     ai['possible_attacks'][(other_coord, i2)] -= 1
                                 break
-
-
-
-    # if len(ai['preferable_attacks']) > 0:
-    #     attack_coords = random.choice(ai['preferable_attacks'])
-    #     ai['preferable_attacks'].remove(attack_coords)
-    # else:
-    #     attack_coords = random.choice(ai['possible_attacks'])
-    # ai['possible_attacks'].remove(attack_coords)
-
-    # attack_coords = random.choice(list(ai['possible_attacks'].keys()))
-    # del ai['possible_attacks'][attack_coords]
-    max_combinations = max(ai['possible_attacks'].values())
+    combinations = ai['possible_attacks'].values()
+    if ai['ship_found']:
+        if len(ai['direction']) > 0:
+            x = ai['last_attack'][0] + ai['direction'][0]
+            y = ai['last_attack'][1] + ai['direction'][1]
+            if (x, y) not in possible_attack_coords:
+                x = ai['first_hit'][0] + ai['direction'][0]
+                y = ai['first_hit'][1] + ai['direction'][1]
+            return (x, y)
+        x = ai['first_hit'][0]
+        y = ai['first_hit'][1]
+        target_coords = [
+            (x + 1, y),
+            (x - 1, y),
+            (x, y + 1),
+            (x, y - 1)
+        ]
+        for coords in target_coords.copy():
+            if coords not in possible_attack_coords:
+                target_coords.remove(coords)
+        possible_attack_coords = target_coords
+        combinations = [ai['possible_attacks'][coords] for coords in target_coords]
+    max_combinations = max(combinations)
     best_attack_coords = []
     for coords in possible_attack_coords:
         if ai['possible_attacks'][coords] == max_combinations:
             best_attack_coords.append(coords)
     attack_coords = random.choice(best_attack_coords)
     return attack_coords
+
+def get_dir(dif: int) -> int:
+    """Returns the direction, given a difference in coordinates."""
+    if dif < 0:
+        return -1
+    if dif > 0:
+        return 1
+    return 0
 
 if __name__ == '__main__':
     app.template_folder = 'templates'
