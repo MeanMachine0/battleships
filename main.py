@@ -18,7 +18,7 @@ ai = {
     'board': [],
     'possible_attacks': {},
     'preferable_attacks': [],
-    'ships_not_sunk': []
+    'sizes_ships_not_sunk': []
 }
 
 def initialise_players() -> None:
@@ -35,7 +35,7 @@ def initialise_players() -> None:
         'board': [],
         'possible_attacks': {},
         'preferable_attacks': [],
-        'ships_not_sunk': []
+        'sizes_ships_not_sunk': []
     }
 
 @app.route('/', methods=['GET'])
@@ -65,13 +65,13 @@ def attack():
         you['attacks'].append(attack_coords)
         num_ships_before = len(you['ships'])
         ai_attack_coords = generate_attack()
-        value_at_ai_attack = you['board'][ai_attack_coords[1]][ai_attack_coords[0]]
+        size_at_ai_attack = you['board'][ai_attack_coords[1]][ai_attack_coords[0]]
         ai_hit = game_engine.attack(ai_attack_coords,
                            you['board'],
                            you['ships'])
         if ai_hit:
             if len(you['ships']) < num_ships_before:
-                ai['ships_not_sunk'].remove(value_at_ai_attack)
+                ai['sizes_ships_not_sunk'].remove(size_at_ai_attack)
             board_size = len(you['board'])
             for i, coord in enumerate(ai_attack_coords):
                 other_coord = ai_attack_coords[-(i + 1)]
@@ -79,6 +79,7 @@ def attack():
                     ai['preferable_attacks'].append((coord + 1, other_coord))
                 if coord > 0:
                     ai['preferable_attacks'].append((coord - 1, other_coord))
+        del ai['possible_attacks'][ai_attack_coords]
         if len(ai['ships']) == 0 or len(you['ships']) == 0:
             return jsonify(
                 {
@@ -108,9 +109,9 @@ def placement_interface():
         initialise_players()
         for y in range(board_size):
             for x in range(board_size):
-                ai['possible_attacks'][((x, y))] = 1
+                ai['possible_attacks'][((x, y))] = 0
         you['ships'] = components.create_battleships()
-        ai['ships_not_sunk'] = list(you['ships'].keys())
+        ai['sizes_ships_not_sunk'] = you['ships'].values()
         you['board'] = components.place_battleships(
             components.initialise_board(board_size),
             you['ships'].copy(),
@@ -133,9 +134,32 @@ def placement_interface():
 
 def generate_attack() -> (int, int):
     """Returns the coordinates used to attack the player."""
-    # for y, row in enumerate(you['board']):
-    #     for x, value in enumerate(row):
-    #         for ship in ai['ships_not_sunk']:
+    possible_attack_coords = list(ai['possible_attacks'].keys())
+    for coords in possible_attack_coords:
+        ai['possible_attacks'][coords] = 0
+    board_size = len(you['board'])
+    for size in ai['sizes_ships_not_sunk']:
+        for coords in possible_attack_coords:
+            for i, coord in enumerate(coords):
+                other_coord = coords[-(i + 1)]
+                if coord + size - 1 < board_size:
+                    for i1 in range(coord, coord + size):
+                        if i == 0:
+                            if (i1, other_coord) in possible_attack_coords:
+                                ai['possible_attacks'][(i1, other_coord)] += 1
+                            else:
+                                for i2 in range(coord, i1):
+                                    ai['possible_attacks'][(i2, other_coord)] -= 1
+                                break
+                        else:
+                            if (other_coord, i1) in possible_attack_coords:
+                                ai['possible_attacks'][(other_coord, i1)] += 1
+                            else:
+                                for i2 in range(coord, i1):
+                                    ai['possible_attacks'][(other_coord, i2)] -= 1
+                                break
+
+
 
     # if len(ai['preferable_attacks']) > 0:
     #     attack_coords = random.choice(ai['preferable_attacks'])
@@ -143,8 +167,15 @@ def generate_attack() -> (int, int):
     # else:
     #     attack_coords = random.choice(ai['possible_attacks'])
     # ai['possible_attacks'].remove(attack_coords)
-    attack_coords = random.choice(list(ai['possible_attacks'].keys()))
-    del ai['possible_attacks'][attack_coords]
+
+    # attack_coords = random.choice(list(ai['possible_attacks'].keys()))
+    # del ai['possible_attacks'][attack_coords]
+    max_combinations = max(ai['possible_attacks'].values())
+    best_attack_coords = []
+    for coords in possible_attack_coords:
+        if ai['possible_attacks'][coords] == max_combinations:
+            best_attack_coords.append(coords)
+    attack_coords = random.choice(best_attack_coords)
     return attack_coords
 
 if __name__ == '__main__':
