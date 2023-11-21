@@ -1,53 +1,89 @@
 """Contains the functions for web implentation."""
 import json
 import random
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, jsonify, redirect, render_template
 import components
 import game_engine
 import mp_game_engine
 
 app = Flask(__name__)
 
-
-players = {
-    'you': {
-        'ships': {},
-        'board': []
-    },
-    'ai': {
+you = {
         'ships': {},
         'board': [],
-        'possible_attacks': []
-    }
+        'attacks': []
 }
+ai = {
+    'ships': {},
+    'board': [],
+    'possible_attacks': {},
+    'preferable_attacks': [],
+    'ships_not_sunk': []
+}
+
+def initialise_players() -> None:
+    global you
+    you = {
+        'ships': {},
+        'board': [],
+        'attacks': []
+    }
+    global ai
+    ai = {
+        'ships': {},
+        'board': [],
+        'possible_attacks': {},
+        'preferable_attacks': [],
+        'ships_not_sunk': []
+    }
 
 @app.route('/', methods=['GET'])
 def root():
     """
     Returns the main template, passing a player board to the template.
     """
-    return render_template('main.html', player_board=players['you']['board'])
+    if len(you['ships']) == 0 or len(ai['ships']) == 0:
+        return redirect('/placement')
+    return render_template('main.html', player_board=you['board'])
 
 @app.route('/attack', methods=['GET'])
 def attack():
     """Gets parameters x and y and attacks accordingly."""
+    if request.args and (len(you['ships']) == 0 or len(ai['ships']) == 0):
+        return render_template('main.html', player_board=you['board'])
     if request.args:
         x = int(request.args.get('x'))
         y = int(request.args.get('y'))
-        hit = game_engine.attack((x, y),
-                                 players['ai']['board'],
-                                 players['ai']['ships']
+        attack_coords = (x, y)
+        if attack_coords in you['attacks']:
+            return render_template('main.html', player_board=you['board'])
+        hit = game_engine.attack(attack_coords,
+                                 ai['board'],
+                                 ai['ships']
                                 )
+        you['attacks'].append(attack_coords)
+        num_ships_before = len(you['ships'])
         ai_attack_coords = generate_attack()
-        game_engine.attack(ai_attack_coords,
-                           players['you']['board'],
-                           players['you']['ships'])
-        if len(players['ai']['ships']) == 0 or len(players['you']['ships']) == 0:
+        value_at_ai_attack = you['board'][ai_attack_coords[1]][ai_attack_coords[0]]
+        ai_hit = game_engine.attack(ai_attack_coords,
+                           you['board'],
+                           you['ships'])
+        if ai_hit:
+            if len(you['ships']) < num_ships_before:
+                ai['ships_not_sunk'].remove(value_at_ai_attack)
+            board_size = len(you['board'])
+            for i, coord in enumerate(ai_attack_coords):
+                other_coord = ai_attack_coords[-(i + 1)]
+                if coord < board_size - 1:
+                    ai['preferable_attacks'].append((coord + 1, other_coord))
+                if coord > 0:
+                    ai['preferable_attacks'].append((coord - 1, other_coord))
+        if len(ai['ships']) == 0 or len(you['ships']) == 0:
             return jsonify(
                 {
                     'hit': hit,
                     'AI_Turn': ai_attack_coords,
-                    'finished': mp_game_engine.game_over(won=len(players['ai']['ships']) == 0)
+                    'finished': mp_game_engine.game_over(won=len(ai['ships']) == 0)
                 }
             )
     return jsonify({'hit': hit, 'AI_Turn': ai_attack_coords})
@@ -67,38 +103,49 @@ def placement_interface():
     if request.method == 'POST':
         placements_data = request.get_json()
         with open('placement.json', 'w', encoding='utf-8') as placements_json:
-            json.dump(placements_data, placements_json, indent=2)
-        players['ai']['possible_attacks'] = []
+            json.dump(placements_data, placements_json, separators=(',', ':'))
+        initialise_players()
         for y in range(board_size):
             for x in range(board_size):
-                players['ai']['possible_attacks'].append((x, y))
-        players['you']['ships'] = components.create_battleships()
-        players['you']['board'] = components.place_battleships(
+                ai['possible_attacks'][((x, y))] = 1
+        you['ships'] = components.create_battleships()
+        ai['ships_not_sunk'] = you['ships'].copy()
+        you['board'] = components.place_battleships(
             components.initialise_board(board_size),
-            players['you']['ships'].copy(),
+            you['ships'].copy(),
             'custom'
         )
-        if players['you']['board'] is None:
+        if you['board'] is None:
             return jsonify(
                 {
                     'message': 'Invalid configuration: could not place ships ' +
                     'accordingly to "placement.json".'
                 }
             )
-        players['ai']['ships'] = components.create_battleships()
-        players['ai']['board'] = components.place_battleships(
+        ai['ships'] = components.create_battleships()
+        ai['board'] = components.place_battleships(
             components.initialise_board(board_size),
-            players['ai']['ships'].copy(),
+            ai['ships'].copy(),
             'random'
         )
     return jsonify({'message': 'success'})
 
 def generate_attack() -> (int, int):
     """Returns the coordinates used to attack the player."""
-    attack_coords = random.choice(players['ai']['possible_attacks'])
-    players['ai']['possible_attacks'].remove(attack_coords)
+    # for y, row in enumerate(you['board']):
+    #     for x, value in enumerate(row):
+    #         for ship in ai['ships_not_sunk']:
+
+    # if len(ai['preferable_attacks']) > 0:
+    #     attack_coords = random.choice(ai['preferable_attacks'])
+    #     ai['preferable_attacks'].remove(attack_coords)
+    # else:
+    #     attack_coords = random.choice(ai['possible_attacks'])
+    # ai['possible_attacks'].remove(attack_coords)
+    attack_coords = random.choice(list(ai['possible_attacks'].keys()))
+    del ai['possible_attacks'][attack_coords]
     return attack_coords
 
 if __name__ == '__main__':
     app.template_folder = 'templates'
-    app.run(debug=False)
+    app.run(debug=True)
