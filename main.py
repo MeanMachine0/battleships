@@ -42,10 +42,14 @@ def attack():
         game_engine.attack(ai_attack_coords,
                            players['you']['board'],
                            players['you']['ships'])
-        if len(players['ai']['ships']) == 0:
-            return jsonify({'hit': hit, 'AI_Turn': ai_attack_coords, 'finished': mp_game_engine.game_over(True)})
-        if len(players['you']['ships']) == 0:
-            return jsonify({'hit': hit, 'AI_Turn': ai_attack_coords, 'finished': mp_game_engine.game_over(False)})
+        if len(players['ai']['ships']) == 0 or len(players['you']['ships']) == 0:
+            return jsonify(
+                {
+                    'hit': hit,
+                    'AI_Turn': ai_attack_coords,
+                    'finished': mp_game_engine.game_over(won=len(players['ai']['ships']) == 0)
+                }
+            )
     return jsonify({'hit': hit, 'AI_Turn': ai_attack_coords})
 
 @app.route('/placement', methods=['GET', 'POST'])
@@ -69,9 +73,11 @@ def placement_interface():
             for x in range(board_size):
                 players['ai']['possible_attacks'].append((x, y))
         players['you']['ships'] = components.create_battleships()
-        players['you']['board'] = components.place_battleships(components.initialise_board(board_size),
-                                                               players['you']['ships'].copy(),
-                                                               'custom')
+        players['you']['board'] = components.place_battleships(
+            components.initialise_board(board_size),
+            players['you']['ships'].copy(),
+            'custom'
+        )
         if players['you']['board'] is None:
             return jsonify(
                 {
@@ -80,9 +86,11 @@ def placement_interface():
                 }
             )
         players['ai']['ships'] = components.create_battleships()
-        players['ai']['board'] = components.place_battleships(components.initialise_board(board_size),
-                                                              players['ai']['ships'].copy(),
-                                                              'random')
+        players['ai']['board'] = components.place_battleships(
+            components.initialise_board(board_size),
+            players['ai']['ships'].copy(),
+            'random'
+        )
     return jsonify({'message': 'success'})
 
 def generate_attack() -> (int, int):
