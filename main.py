@@ -22,6 +22,7 @@ ai = {
 }
 
 def initialise_players() -> None:
+    """Initialises/resets players' dicts."""
     global you
     you = {
         'ships': {},
