@@ -4,7 +4,6 @@ import random
 from flask import Flask, request, jsonify, redirect, render_template
 import components
 import game_engine
-import mp_game_engine
 
 app = Flask(__name__)
 
@@ -112,7 +111,7 @@ def attack():
                 {
                     'hit': hit,
                     'AI_Turn': ai_attack_coords,
-                    'finished': mp_game_engine.game_over(won=len(ai['ships']) == 0)
+                    'finished': 'You Won!' if len(ai['ships']) == 0 else 'You Lost!'
                 }
             )
     return jsonify({'hit': hit, 'AI_Turn': ai_attack_coords})
