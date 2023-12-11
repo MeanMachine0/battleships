@@ -178,8 +178,9 @@ def attack():
         attack_coords = (x, y)
         if attack_coords in you.attacks:
             return render_template('main.html', player_board=you.board_copy)
+        you.attacks.append(attack_coords)
         hit = game_engine.attack(attack_coords, ai.board, ai.ships)
-        round_num = len(you.attacks)
+        round_num = len(you.attacks) - 1
         ai_attack_coords = ai.attacks[round_num]
         game_engine.attack(ai_attack_coords, you.board_copy, you.ships_copy)
         if len(ai.ships) == 0 or round_num == len(ai.attacks):
