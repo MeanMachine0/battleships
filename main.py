@@ -183,7 +183,7 @@ def attack():
         round_num = len(you.attacks) - 1
         ai_attack_coords = ai.attacks[round_num]
         game_engine.attack(ai_attack_coords, you.board_copy, you.ships_copy)
-        if len(ai.ships) == 0 or round_num == len(ai.attacks):
+        if len(ai.ships) == 0 or len(you.ships_copy) == 0:
             return jsonify(
                 {
                     'hit': hit,
