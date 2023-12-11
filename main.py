@@ -165,7 +165,7 @@ def root():
     """
     if len(ai.ships) == 0 or len(you.attacks) >= len(ai.attacks):
         return redirect('/placement')
-    return render_template('main.html', player_board=you.board)
+    return render_template('main.html', player_board=you.board_copy)
 
 @app.route('/attack', methods=['GET'])
 def attack():
