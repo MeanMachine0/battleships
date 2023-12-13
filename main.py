@@ -59,7 +59,7 @@ class Ai:
                 poss_directions[directions] = self.poss_attacks[coords]
             else:
                 count += 1
-        if count > 1:
+        if count > 1: # No possible orthogonal attacks
             return None
         if len(poss_directions) == 1:
             directions = list(poss_directions.keys())[0]
@@ -70,7 +70,22 @@ class Ai:
                 directions = directions1
             else:
                 directions = directions2
-        return [directions, poss_directions[directions]]
+        return [list(directions), poss_directions[directions]]
+
+    def orthogonal_search(self, current_hits_copy=None) -> None:
+        """Searches for ships orthogonal to a ship nested within a string of different ships."""
+        dirs_copy = self.directions.copy()
+        if current_hits_copy is None:
+            current_hits_copy = self.current_hits.copy()
+        results = [(self.orthogonal_dir(dirs_copy, hit), hit) for hit in current_hits_copy]
+        for hit in current_hits_copy:
+            best_hit = max(results, key=lambda x: x[1])[1]
+            results = [result for result in results if result[1] != best_hit]
+            directions = self.orthogonal_dir(dirs_copy, best_hit)[0]
+            next_attack = tuple(x + y for x, y in zip(best_hit, directions))
+            self.attack(next_attack, [best_hit], directions, best_hit)
+            while you.board_copy[best_hit[1]][best_hit[0]] in self.sizes_not_sunk:
+                self.attack()
 
     def update_attacks(self, attack_coords: (int, int)) -> None:
         """
@@ -145,14 +160,6 @@ class Ai:
         self.update_attacks(attack_coords)
         return attack_coords
 
-    # def process_attack(self, coords: (int, int)) -> None:
-    #     num_ships_before = len(you.ships)
-    #     value_at_coords = you.board[coords[1]][coords[0]]
-    #     hit = game_engine.attack(coords, you.board, you.ships)
-    #     if not hit and len(self.directions) > 0:
-    #         self.directions[0] = (-1) * self.directions[0]
-    #         self.directions[1] = (-1) * self.directions[1]
-
     def attack(self, coords=None, current_hits=None, directions=None, first_hit=None) -> None:
         """Attacks the player."""
         if coords is None:
@@ -170,17 +177,7 @@ class Ai:
         success = game_engine.attack(coords, you.board, you.ships)
         if self.direction_changes == 2 and not success and len(self.directions) > 0:
             self.direction_changes = 0
-            dirs_copy = self.directions.copy()
-            current_hits_copy = self.current_hits.copy()
-            results = [(self.orthogonal_dir(dirs_copy, hit), hit) for hit in current_hits_copy]
-            for hit in current_hits_copy:
-                best_hit = max(results, key=lambda x: x[1])[1]
-                results = [result for result in results if result[1] != best_hit]
-                directions = self.orthogonal_dir(dirs_copy, best_hit)[0]
-                next_attack = tuple(x + y for x, y in zip(best_hit, directions))
-                self.attack(next_attack, [best_hit], directions, best_hit)
-                while you.board_copy[best_hit[1]][best_hit[0]] in self.sizes_not_sunk:
-                    self.attack()
+            self.orthogonal_search()
         elif not success and len(self.directions) > 0:
             self.direction_changes += 1
             self.directions = [(-1) * coord for coord in self.directions]
@@ -206,10 +203,31 @@ class Ai:
                         if you.board_copy[y][x] == you.board_copy[coords[1]][coords[0]]:
                             self.done_hits.append((x, y))
                         else:
-                            self.standing_hits.append((x, y))
-                for hit in self.standing_hits:
-                    self.update_attacks(hit)
-                    self.attack(coords=hit)
+                            if (x, y) not in self.standing_hits:
+                                self.standing_hits.append((x, y))
+                standing_hits_copy = self.standing_hits.copy()
+                current_hits_copy = self.current_hits.copy()
+                for i, direction in enumerate(self.directions):
+                    if direction != 0:
+                        relative_coords = [coords[i] for coords in current_hits_copy]
+                        ind = i
+                for hit in standing_hits_copy:
+                    if hit[ind] in (min(relative_coords), max(relative_coords)):
+                        next_attack = list(hit)
+                        next_attack[ind] += 1 if hit[ind] == max(relative_coords) else -1
+                        next_attack = tuple(next_attack)
+                        if next_attack in self.poss_attacks:
+                            self.attack(next_attack, [hit], directions, hit)
+                            success1 = you.board_copy[next_attack[1]][next_attack[0]] is not None
+                            if success1:
+                                while you.board_copy[hit[1]][hit[0]] in self.sizes_not_sunk:
+                                    self.attack()
+                            else:
+                                self.orthogonal_search(current_hits_copy=[hit])
+                        else:
+                            self.orthogonal_search(current_hits_copy=[hit])
+                    else:
+                        self.orthogonal_search(current_hits_copy=[hit])
                 self.current_hits.clear()
                 self.standing_hits.clear()
                 self.directions.clear()
