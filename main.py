@@ -16,12 +16,12 @@ class You:
         self.attacks = [] if attacks is None else attacks
 
 class Ai:
-    def __init__(self, ships=None, board=None, potential_attacks=None,
-                 preferable_attacks=None, ships_not_sunk=None) -> None:
+    def __init__(self, ships=None, board=None, poss_attacks=None,
+                 pref_attacks=None, ships_not_sunk=None) -> None:
         self.ships = {} if ships is None else ships
         self.board = [] if board is None else board
-        self.potential_attacks = {} if potential_attacks is None else potential_attacks
-        self.preferable_attacks = [] if preferable_attacks is None else preferable_attacks
+        self.poss_attacks = {} if poss_attacks is None else poss_attacks
+        self.pref_attacks = [] if pref_attacks is None else pref_attacks
         self.ships_not_sunk = {} if ships_not_sunk is None else ships_not_sunk
         self.ship_found = False
         self.first_hit = ()
@@ -32,7 +32,7 @@ class Ai:
         self.attacks = []
         random.seed(42)
 
-    def get_dir(self, dif: int) -> int:
+    def dir(self, dif: int) -> int:
         """Returns the direction, given a difference in coordinates."""
         if dif < 0:
             return -1
@@ -40,10 +40,31 @@ class Ai:
             return 1
         return 0
 
+    def orthogonal_dir(self, at: (int, int)) -> None:
+        """Sets the attacking direction to an orthogonal direction."""
+        directions1 = tuple([-1 if val == 0 else 0 for val in self.directions])
+        directions2 = tuple([1 if val == 0 else 0 for val in self.directions])
+        poss_directions = {}
+        for directions in (directions1, directions2):
+            coords = (at[0] + directions[0], at[1] + directions[1])
+            if coords in self.poss_attacks:
+                poss_directions[directions] = self.poss_attacks[coords]
+        print(poss_directions)
+        if len(poss_directions) == 1:
+            self.directions = poss_directions[0]
+        else:
+            if poss_directions[directions1] == poss_directions[directions2]:
+                self.directions = random.choice(poss_directions)
+            elif poss_directions[directions1] > poss_directions[directions2]:
+                self.directions = directions1
+            else:
+                self.directions = directions2
+
     def update_probability_grid(self) -> None:
-        possible_attack_coords = list(self.potential_attacks.keys())
+        """Sets the number of ways a ship could be on each potential attack."""
+        possible_attack_coords = list(self.poss_attacks.keys())
         for coords in possible_attack_coords:
-            self.potential_attacks[coords] = 0
+            self.poss_attacks[coords] = 0
         board_size = len(you.board)
         for size in list(self.ships_not_sunk.values()):
             for coords in possible_attack_coords:
@@ -53,24 +74,23 @@ class Ai:
                         for i1 in range(coord, coord + size):
                             if i == 0:
                                 if (i1, other_coord) in possible_attack_coords:
-                                    self.potential_attacks[(i1, other_coord)] += 1
+                                    self.poss_attacks[(i1, other_coord)] += 1
                                 else:
                                     for i2 in range(coord, i1):
-                                        self.potential_attacks[(i2, other_coord)] -= 1
+                                        self.poss_attacks[(i2, other_coord)] -= 1
                                     break
                             else:
                                 if (other_coord, i1) in possible_attack_coords:
-                                    self.potential_attacks[(other_coord, i1)] += 1
+                                    self.poss_attacks[(other_coord, i1)] += 1
                                 else:
                                     for i2 in range(coord, i1):
-                                        self.potential_attacks[(other_coord, i2)] -= 1
+                                        self.poss_attacks[(other_coord, i2)] -= 1
                                     break
-        return
 
     def generate_attack(self) -> (int, int):
         self.update_probability_grid()
-        combinations = self.potential_attacks.values()
-        potential_attacks = list(self.potential_attacks.keys())
+        combinations = self.poss_attacks.values()
+        potential_attacks = list(self.poss_attacks.keys())
         if self.ship_found:
             if len(self.directions) > 0:
                 x = self.attacks[-1][0] + self.directions[0]
@@ -80,7 +100,7 @@ class Ai:
                     y = self.first_hit[1] + self.directions[1]
                 attack_coords = (x, y)
                 self.attacks.append(attack_coords)
-                del self.potential_attacks[attack_coords]
+                del self.poss_attacks[attack_coords]
                 return attack_coords
             x = self.first_hit[0]
             y = self.first_hit[1]
@@ -91,12 +111,12 @@ class Ai:
                 (x, y - 1)
             ]
             potential_attacks = [coords for coords in target_coords if coords in potential_attacks]
-            combinations = [self.potential_attacks[coords] for coords in potential_attacks]
+            combinations = [self.poss_attacks[coords] for coords in potential_attacks]
         best = max(combinations)
-        best_attacks = [coords for coords in potential_attacks if self.potential_attacks[coords] == best]
+        best_attacks = [coords for coords in potential_attacks if self.poss_attacks[coords] == best]
         attack_coords = random.choice(best_attacks)
         self.attacks.append(attack_coords)
-        del self.potential_attacks[attack_coords]
+        del self.poss_attacks[attack_coords]
         return attack_coords
 
     # def process_attack(self, coords: (int, int)) -> None:
@@ -124,11 +144,11 @@ class Ai:
                 else:
                     x_dif = coords[0] - self.first_hit[0]
                     y_dif = coords[1] - self.first_hit[1]
-                    x_dir = self.get_dir(x_dif)
-                    y_dir = self.get_dir(y_dif)
-                    if (coords[0] + x_dir, coords[1] + y_dir) not in self.potential_attacks:
-                        x_dir = -1 * x_dir
-                        y_dir = -1 * y_dir
+                    x_dir = self.dir(x_dif)
+                    y_dir = self.dir(y_dif)
+                    if (coords[0] + x_dir, coords[1] + y_dir) not in self.poss_attacks:
+                        x_dir = (-1) * x_dir
+                        y_dir = (-1) * y_dir
                     self.directions = [x_dir, y_dir]
             if len(you.ships) < num_ships_before:
                 # length_sunk_ship = self.ships_not_sunk[value_at_coords]
@@ -144,7 +164,6 @@ class Ai:
                 # self.undetermined_hits_coords.clear()
                 # if len(self.current_hits) < length_sunk_ship:
         # if not hit and self.ship_found:
-        return
 
 you = You()
 ai = Ai()
@@ -210,7 +229,7 @@ def placement_interface():
         initialise_players()
         for y in range(board_size):
             for x in range(board_size):
-                ai.potential_attacks[((x, y))] = 0
+                ai.poss_attacks[((x, y))] = 0
         you.ships = components.create_battleships()
         you.ships_copy = components.create_battleships()
         ai.ships_not_sunk = you.ships.copy()
