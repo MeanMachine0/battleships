@@ -65,7 +65,7 @@ class Ai:
             directions = list(poss_directions.keys())[0]
         else:
             if poss_directions[directions1] == poss_directions[directions2]:
-                directions = random.choice(poss_directions)
+                directions = random.choice(list(poss_directions.keys()))
             elif poss_directions[directions1] > poss_directions[directions2]:
                 directions = directions1
             else:
@@ -120,9 +120,10 @@ class Ai:
                     if count == 0:
                         x = self.first_hit[0] + self.directions[0]
                         y = self.first_hit[1] + self.directions[1]
+                    else:
+                        x += self.directions[0]
+                        y += self.directions[1]
                     count += 1
-                    x += self.directions[0]
-                    y += self.directions[1]
                 attack_coords = (x, y)
                 self.update_attacks(attack_coords)
                 return attack_coords
