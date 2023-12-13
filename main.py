@@ -8,6 +8,7 @@ import game_engine
 app = Flask(__name__)
 
 class You:
+    """A human player."""
     def __init__(self, ships=None, ships_copy=None, board=None, board_copy=None, attacks=None):
         self.ships = {} if ships is None else ships
         self.ships_copy = {} if ships_copy is None else ships_copy
@@ -16,20 +17,23 @@ class You:
         self.attacks = [] if attacks is None else attacks
 
 class Ai:
+    """A computer player."""
     def __init__(self, ships=None, board=None, poss_attacks=None,
-                 pref_attacks=None, ships_not_sunk=None) -> None:
+                 pref_attacks=None, sizes_not_sunk=None) -> None:
         self.ships = {} if ships is None else ships
         self.board = [] if board is None else board
         self.poss_attacks = {} if poss_attacks is None else poss_attacks
         self.pref_attacks = [] if pref_attacks is None else pref_attacks
-        self.ships_not_sunk = {} if ships_not_sunk is None else ships_not_sunk
+        self.sizes_not_sunk = {} if sizes_not_sunk is None else sizes_not_sunk
         self.ship_found = False
         self.first_hit = ()
         self.directions = []
-        self.current_hits = {}
-        self.undetermined_hits_coords = []
+        self.current_hits = []
+        self.done_hits = []
+        self.standing_hits = []
         self.num_hits = 0
         self.attacks = []
+        self.direction_changes = 0
         random.seed(42)
 
     def dir(self, dif: int) -> int:
@@ -40,25 +44,41 @@ class Ai:
             return 1
         return 0
 
-    def orthogonal_dir(self, at: (int, int)) -> None:
-        """Sets the attacking direction to an orthogonal direction."""
-        directions1 = tuple([-1 if val == 0 else 0 for val in self.directions])
-        directions2 = tuple([1 if val == 0 else 0 for val in self.directions])
+    def orthogonal_dir(self, directions: (int, int), at: (int, int)) -> [(int, int), int]:
+        """
+        Returns a direction orthogonal to the attacking direction and
+        the combinations of the next attack coordinates.
+        """
+        directions1 = tuple([-1 if val == 0 else 0 for val in directions])
+        directions2 = tuple([1 if val == 0 else 0 for val in directions])
         poss_directions = {}
+        count = 0
         for directions in (directions1, directions2):
             coords = (at[0] + directions[0], at[1] + directions[1])
             if coords in self.poss_attacks:
                 poss_directions[directions] = self.poss_attacks[coords]
-        print(poss_directions)
+            else:
+                count += 1
+        if count > 1:
+            return None
         if len(poss_directions) == 1:
-            self.directions = poss_directions[0]
+            directions = list(poss_directions.keys())[0]
         else:
             if poss_directions[directions1] == poss_directions[directions2]:
-                self.directions = random.choice(poss_directions)
+                directions = random.choice(poss_directions)
             elif poss_directions[directions1] > poss_directions[directions2]:
-                self.directions = directions1
+                directions = directions1
             else:
-                self.directions = directions2
+                directions = directions2
+        return [directions, poss_directions[directions]]
+
+    def update_attacks(self, attack_coords: (int, int)) -> None:
+        """
+        Adds the latest attack coordinates to the list of attacks and
+        deletes the attack from possible attacks.
+        """
+        self.attacks.append(attack_coords)
+        del self.poss_attacks[attack_coords]
 
     def update_probability_grid(self) -> None:
         """Sets the number of ways a ship could be on each potential attack."""
@@ -66,7 +86,7 @@ class Ai:
         for coords in possible_attack_coords:
             self.poss_attacks[coords] = 0
         board_size = len(you.board)
-        for size in list(self.ships_not_sunk.values()):
+        for size in list(self.sizes_not_sunk.values()):
             for coords in possible_attack_coords:
                 for i, coord in enumerate(coords):
                     other_coord = coords[-(i + 1)]
@@ -87,20 +107,24 @@ class Ai:
                                         self.poss_attacks[(other_coord, i2)] -= 1
                                     break
 
-    def generate_attack(self) -> (int, int):
+    def generate_attack(self, attack_coords=None) -> (int, int):
+        """Returns coordinates to attack the player."""
         self.update_probability_grid()
-        combinations = self.poss_attacks.values()
         potential_attacks = list(self.poss_attacks.keys())
         if self.ship_found:
             if len(self.directions) > 0:
                 x = self.attacks[-1][0] + self.directions[0]
                 y = self.attacks[-1][1] + self.directions[1]
-                if (x, y) not in potential_attacks:
-                    x = self.first_hit[0] + self.directions[0]
-                    y = self.first_hit[1] + self.directions[1]
+                count = 0
+                while (x, y) not in potential_attacks:
+                    if count == 0:
+                        x = self.first_hit[0] + self.directions[0]
+                        y = self.first_hit[1] + self.directions[1]
+                    count += 1
+                    x += self.directions[0]
+                    y += self.directions[1]
                 attack_coords = (x, y)
-                self.attacks.append(attack_coords)
-                del self.poss_attacks[attack_coords]
+                self.update_attacks(attack_coords)
                 return attack_coords
             x = self.first_hit[0]
             y = self.first_hit[1]
@@ -112,11 +136,12 @@ class Ai:
             ]
             potential_attacks = [coords for coords in target_coords if coords in potential_attacks]
             combinations = [self.poss_attacks[coords] for coords in potential_attacks]
+        else:
+            combinations = self.poss_attacks.values()
         best = max(combinations)
         best_attacks = [coords for coords in potential_attacks if self.poss_attacks[coords] == best]
         attack_coords = random.choice(best_attacks)
-        self.attacks.append(attack_coords)
-        del self.poss_attacks[attack_coords]
+        self.update_attacks(attack_coords)
         return attack_coords
 
     # def process_attack(self, coords: (int, int)) -> None:
@@ -127,53 +152,72 @@ class Ai:
     #         self.directions[0] = (-1) * self.directions[0]
     #         self.directions[1] = (-1) * self.directions[1]
 
-    def simulate_attacks(self) -> None:
-        while len(you.ships) > 0:
+    def attack(self, coords=None, current_hits=None, directions=None, first_hit=None) -> None:
+        """Attacks the player."""
+        if coords is None:
             coords = self.generate_attack()
-            num_ships_before = len(you.ships)
-            value_at_coords = you.board[coords[1]][coords[0]]
-            hit = game_engine.attack(coords, you.board, you.ships)
-            if not hit and len(self.directions) > 0:
-                self.directions[0] = (-1) * self.directions[0]
-                self.directions[1] = (-1) * self.directions[1]
-            if hit:
-                self.current_hits[coords] = value_at_coords
-                if not self.ship_found:
-                    self.ship_found = True
-                    self.first_hit = coords
-                else:
-                    x_dif = coords[0] - self.first_hit[0]
-                    y_dif = coords[1] - self.first_hit[1]
-                    x_dir = self.dir(x_dif)
-                    y_dir = self.dir(y_dif)
-                    if (coords[0] + x_dir, coords[1] + y_dir) not in self.poss_attacks:
-                        x_dir = (-1) * x_dir
-                        y_dir = (-1) * y_dir
-                    self.directions = [x_dir, y_dir]
+        else:
+            self.update_attacks(coords)
+        if current_hits is not None:
+            self.current_hits = current_hits
+        if directions is not None:
+            self.directions = directions
+        if first_hit is not None:
+            self.first_hit = first_hit
+        num_ships_before = len(you.ships)
+        success = game_engine.attack(coords, you.board, you.ships)
+        if self.direction_changes == 2 and not success and len(self.directions) > 0:
+            self.direction_changes = 0
+            dirs_copy = self.directions.copy()
+            current_hits_copy = self.current_hits.copy()
+            for hit in current_hits_copy:
+                results = [(self.orthogonal_dir(dirs_copy, hit), hit) for hit in current_hits_copy]
+                best_hit = max(results, key=lambda x: x[1])[1]
+                current_hits_copy.remove(best_hit)
+                directions = self.orthogonal_dir(dirs_copy, best_hit)[0]
+                next_attack = tuple(x + y for x, y in zip(best_hit, directions))
+                self.attack(next_attack, [best_hit], directions, best_hit)
+        elif not success and len(self.directions) > 0:
+            self.direction_changes += 1
+            self.directions = [(-1) * coord for coord in self.directions]
+        if success:
+            self.current_hits.append(coords)
+            if not self.ship_found:
+                self.ship_found = True
+                self.first_hit = coords
+            else:
+                x_dif = coords[0] - self.first_hit[0]
+                y_dif = coords[1] - self.first_hit[1]
+                x_dir = self.dir(x_dif)
+                y_dir = self.dir(y_dif)
+                if (coords[0] + x_dir, coords[1] + y_dir) not in self.poss_attacks:
+                    x_dir = (-1) * x_dir
+                    y_dir = (-1) * y_dir
+                self.directions = [x_dir, y_dir]
             if len(you.ships) < num_ships_before:
-                # length_sunk_ship = self.ships_not_sunk[value_at_coords]
-                del self.ships_not_sunk[value_at_coords]
-                # for coords, ship in self.current_hits.items():
-                #     if ship != value_at_coords:
-                #         self.undetermined_hits_coords.append(coords)
-                # while len(self.undetermined_hits_coords) > 0:
-                # if len(self.undetermined_hits_coords) > 0:
-                #     self.attack()
+                length_sunk_ship = self.sizes_not_sunk[you.board_copy[coords[1]][coords[0]]]
+                del self.sizes_not_sunk[you.board_copy[coords[1]][coords[0]]]
+                if length_sunk_ship != len(self.current_hits):
+                    for (x, y) in self.current_hits:
+                        if you.board_copy[y][x] == you.board_copy[coords[1]][coords[0]]:
+                            self.done_hits.append((x, y))
+                        else:
+                            self.standing_hits.append((x, y))
+                for hit in self.standing_hits:
+                    self.update_attacks(hit)
+                    self.attack(coords=hit)
+                self.current_hits.clear()
+                self.standing_hits.clear()
                 self.directions.clear()
                 self.ship_found = False
-                # self.undetermined_hits_coords.clear()
-                # if len(self.current_hits) < length_sunk_ship:
-        # if not hit and self.ship_found:
 
 you = You()
 ai = Ai()
 
 def initialise_players() -> None:
     """Initialises/resets players' dicts."""
-    global you
-    you = You()
-    global ai
-    ai = Ai()
+    you.__init__()
+    ai.__init__()
 
 @app.route('/', methods=['GET'])
 def root():
@@ -232,7 +276,7 @@ def placement_interface():
                 ai.poss_attacks[((x, y))] = 0
         you.ships = components.create_battleships()
         you.ships_copy = components.create_battleships()
-        ai.ships_not_sunk = you.ships.copy()
+        ai.sizes_not_sunk = you.ships.copy()
         you.board = components.place_battleships(
             components.initialise_board(board_size),
             you.ships.copy(),
@@ -256,7 +300,8 @@ def placement_interface():
             ai.ships.copy(),
             'random'
         )
-        ai.simulate_attacks()
+        while len(you.ships) > 0:
+            ai.attack()
     return jsonify({'message': 'success'})
 
 if __name__ == '__main__':
