@@ -159,6 +159,7 @@ class Ai:
             coords = self.generate_attack()
         else:
             self.update_attacks(coords)
+            self.update_probability_grid()
         if current_hits is not None:
             self.current_hits = current_hits
         if directions is not None:
@@ -171,13 +172,15 @@ class Ai:
             self.direction_changes = 0
             dirs_copy = self.directions.copy()
             current_hits_copy = self.current_hits.copy()
+            results = [(self.orthogonal_dir(dirs_copy, hit), hit) for hit in current_hits_copy]
             for hit in current_hits_copy:
-                results = [(self.orthogonal_dir(dirs_copy, hit), hit) for hit in current_hits_copy]
                 best_hit = max(results, key=lambda x: x[1])[1]
-                current_hits_copy.remove(best_hit)
+                results = [result for result in results if result[1] != best_hit]
                 directions = self.orthogonal_dir(dirs_copy, best_hit)[0]
                 next_attack = tuple(x + y for x, y in zip(best_hit, directions))
                 self.attack(next_attack, [best_hit], directions, best_hit)
+                while you.board_copy[best_hit[1]][best_hit[0]] in self.sizes_not_sunk:
+                    self.attack()
         elif not success and len(self.directions) > 0:
             self.direction_changes += 1
             self.directions = [(-1) * coord for coord in self.directions]
@@ -210,6 +213,7 @@ class Ai:
                 self.current_hits.clear()
                 self.standing_hits.clear()
                 self.directions.clear()
+                self.direction_changes = 0
                 self.ship_found = False
 
 you = You()
