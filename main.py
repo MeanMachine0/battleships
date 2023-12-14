@@ -1,4 +1,5 @@
 """Contains the functions for web implentation."""
+import copy
 import json
 import random
 from flask import Flask, request, jsonify, redirect, render_template
@@ -10,18 +11,22 @@ app = Flask(__name__)
 class You:
     """A human player."""
     def __init__(self, ships=None, ships_copy=None, board=None, board_copy=None, attacks=None):
-        self.ships = {} if ships is None else ships
-        self.ships_copy = {} if ships_copy is None else ships_copy
-        self.board = [] if board is None else board
-        self.board_copy = [] if board is None else board_copy
+        self.ships = components.create_battleships() if ships is None else ships
+        self.ships_copy = components.create_battleships() if ships_copy is None else ships_copy
+        self.board = components.place_battleships(components.initialise_board(),
+                                                  self.ships.copy(),
+                                                  algorithm='random') if board is None else board
+        self.board_copy = copy.deepcopy(self.board) if board is None else board_copy
         self.attacks = [] if attacks is None else attacks
 
 class Ai:
     """A computer player."""
     def __init__(self, ships=None, board=None, poss_attacks=None,
                  pref_attacks=None, sizes_not_sunk=None) -> None:
-        self.ships = {} if ships is None else ships
-        self.board = [] if board is None else board
+        self.ships = components.create_battleships() if ships is None else ships
+        self.board = components.place_battleships(components.initialise_board(),
+                                                  self.ships.copy(),
+                                                  algorithm='random') if board is None else board
         self.poss_attacks = {} if poss_attacks is None else poss_attacks
         self.pref_attacks = [] if pref_attacks is None else pref_attacks
         self.sizes_not_sunk = {} if sizes_not_sunk is None else sizes_not_sunk
@@ -34,7 +39,7 @@ class Ai:
         self.num_hits = 0
         self.attacks = []
         self.direction_changes = 0
-        random.seed(42)
+        # random.seed(42)
 
     def dir(self, dif: int) -> int:
         """Returns the direction, given a difference in coordinates."""
@@ -72,7 +77,7 @@ class Ai:
                 directions = directions2
         return [list(directions), poss_directions[directions]]
 
-    def orthogonal_search(self, current_hits_copy=None) -> None:
+    def orthogonal_search(self, current_hits_copy: list[(int, int)] = None) -> None:
         """Searches for ships orthogonal to a ship nested within a string of different ships."""
         dirs_copy = self.directions.copy()
         if current_hits_copy is None:
@@ -122,7 +127,7 @@ class Ai:
                                         self.poss_attacks[(other_coord, i2)] -= 1
                                     break
 
-    def generate_attack(self, attack_coords=None) -> (int, int):
+    def generate_attack(self) -> (int, int):
         """Returns coordinates to attack the player."""
         self.update_probability_grid()
         potential_attacks = list(self.poss_attacks.keys())
@@ -138,6 +143,9 @@ class Ai:
                     else:
                         x += self.directions[0]
                         y += self.directions[1]
+                    if abs(x) > len(you.board) - 1 or abs(y) > len(you.board) - 1:
+                        self.orthogonal_search()
+                        return
                     count += 1
                 attack_coords = (x, y)
                 self.update_attacks(attack_coords)
@@ -164,6 +172,8 @@ class Ai:
         """Attacks the player."""
         if coords is None:
             coords = self.generate_attack()
+            if coords is None:
+                return
         else:
             self.update_attacks(coords)
             self.update_probability_grid()
@@ -175,12 +185,12 @@ class Ai:
             self.first_hit = first_hit
         num_ships_before = len(you.ships)
         success = game_engine.attack(coords, you.board, you.ships)
-        if self.direction_changes == 2 and not success and len(self.directions) > 0:
-            self.direction_changes = 0
-            self.orthogonal_search()
-        elif not success and len(self.directions) > 0:
+        if not success and len(self.directions) > 0:
             self.direction_changes += 1
             self.directions = [(-1) * coord for coord in self.directions]
+            if self.direction_changes > 1:
+                self.direction_changes = 0
+                self.orthogonal_search()
         if success:
             self.current_hits.append(coords)
             if not self.ship_found:
@@ -195,6 +205,11 @@ class Ai:
                     x_dir = (-1) * x_dir
                     y_dir = (-1) * y_dir
                 self.directions = [x_dir, y_dir]
+            current_hits_copy = self.current_hits.copy()
+            for i, direction in enumerate(self.directions):
+                if direction != 0:
+                    relative_coords = [coords[i] for coords in current_hits_copy]
+                    ind = i
             if len(you.ships) < num_ships_before:
                 length_sunk_ship = self.sizes_not_sunk[you.board_copy[coords[1]][coords[0]]]
                 del self.sizes_not_sunk[you.board_copy[coords[1]][coords[0]]]
@@ -206,28 +221,35 @@ class Ai:
                             if (x, y) not in self.standing_hits:
                                 self.standing_hits.append((x, y))
                 standing_hits_copy = self.standing_hits.copy()
+                standing_hits_copy = self.standing_hits.copy()
                 current_hits_copy = self.current_hits.copy()
                 for i, direction in enumerate(self.directions):
                     if direction != 0:
                         relative_coords = [coords[i] for coords in current_hits_copy]
                         ind = i
-                for hit in standing_hits_copy:
-                    if hit[ind] in (min(relative_coords), max(relative_coords)):
-                        next_attack = list(hit)
-                        next_attack[ind] += 1 if hit[ind] == max(relative_coords) else -1
-                        next_attack = tuple(next_attack)
-                        if next_attack in self.poss_attacks:
-                            self.attack(next_attack, [hit], directions, hit)
-                            success1 = you.board_copy[next_attack[1]][next_attack[0]] is not None
-                            if success1:
-                                while you.board_copy[hit[1]][hit[0]] in self.sizes_not_sunk:
-                                    self.attack()
+                    standing_hits_copy = self.standing_hits.copy()
+                current_hits_copy = self.current_hits.copy()
+                for i, direction in enumerate(self.directions):
+                    if direction != 0:
+                        relative_coords = [coords[i] for coords in current_hits_copy]
+                        ind = i
+                    for hit in standing_hits_copy:
+                        if hit[ind] in (min(relative_coords), max(relative_coords)): # first/last?
+                            next_attack = list(hit)
+                            next_attack[ind] += 1 if hit[ind] == max(relative_coords) else -1
+                            next_attack = tuple(next_attack)
+                            if next_attack in self.poss_attacks:
+                                self.attack(next_attack, [hit], directions, hit)
+                                success1 = you.board_copy[next_attack[1]][next_attack[0]] is not None
+                                if success1:
+                                    while you.board_copy[hit[1]][hit[0]] in self.sizes_not_sunk:
+                                        self.attack()
+                                else:
+                                    self.orthogonal_search(current_hits_copy=[hit])
                             else:
                                 self.orthogonal_search(current_hits_copy=[hit])
                         else:
                             self.orthogonal_search(current_hits_copy=[hit])
-                    else:
-                        self.orthogonal_search(current_hits_copy=[hit])
                 self.current_hits.clear()
                 self.standing_hits.clear()
                 self.directions.clear()
@@ -305,11 +327,7 @@ def placement_interface():
             you.ships.copy(),
             'custom'
         )
-        you.board_copy = components.place_battleships(
-            components.initialise_board(board_size),
-            you.ships.copy(),
-            'custom'
-        )
+        you.board_copy = copy.deepcopy(you.board)
         if you.board is None:
             return jsonify(
                 {
