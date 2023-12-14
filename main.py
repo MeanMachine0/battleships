@@ -39,7 +39,7 @@ class Ai:
         self.num_hits = 0
         self.attacks = []
         self.direction_changes = 0
-        # random.seed(42)
+        random.seed(42)
 
     def dir(self, dif: int) -> int:
         """Returns the direction, given a difference in coordinates."""
@@ -205,11 +205,6 @@ class Ai:
                     x_dir = (-1) * x_dir
                     y_dir = (-1) * y_dir
                 self.directions = [x_dir, y_dir]
-            current_hits_copy = self.current_hits.copy()
-            for i, direction in enumerate(self.directions):
-                if direction != 0:
-                    relative_coords = [coords[i] for coords in current_hits_copy]
-                    ind = i
             if len(you.ships) < num_ships_before:
                 length_sunk_ship = self.sizes_not_sunk[you.board_copy[coords[1]][coords[0]]]
                 del self.sizes_not_sunk[you.board_copy[coords[1]][coords[0]]]
@@ -220,19 +215,12 @@ class Ai:
                         else:
                             if (x, y) not in self.standing_hits:
                                 self.standing_hits.append((x, y))
-                standing_hits_copy = self.standing_hits.copy()
-                standing_hits_copy = self.standing_hits.copy()
-                current_hits_copy = self.current_hits.copy()
-                for i, direction in enumerate(self.directions):
-                    if direction != 0:
-                        relative_coords = [coords[i] for coords in current_hits_copy]
-                        ind = i
+                    current_hits_copy = self.current_hits.copy()
                     standing_hits_copy = self.standing_hits.copy()
-                current_hits_copy = self.current_hits.copy()
-                for i, direction in enumerate(self.directions):
-                    if direction != 0:
-                        relative_coords = [coords[i] for coords in current_hits_copy]
-                        ind = i
+                    for i, direction in enumerate(self.directions):
+                        if direction != 0:
+                            relative_coords = [coords[i] for coords in current_hits_copy]
+                            ind = i
                     for hit in standing_hits_copy:
                         if hit[ind] in (min(relative_coords), max(relative_coords)): # first/last?
                             next_attack = list(hit)
@@ -274,7 +262,7 @@ def root():
     return render_template('main.html', player_board=you.board_copy)
 
 @app.route('/attack', methods=['GET'])
-def attack():
+def process_attack():
     """Gets parameters x and y, and attacks accordingly."""
     if request.args and (len(you.ships_copy) == 0 or len(ai.ships) == 0):
         return render_template('main.html', player_board=you.board_copy)
