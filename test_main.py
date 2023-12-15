@@ -16,6 +16,3 @@ def test_random_battleships(seed: int) -> None:
     while len(main.you.ships) > 0:
         main.ai.attack()
     assert True
-
-# for i in range(1, 999):
-#     test_random_battleships(i)
