@@ -77,11 +77,13 @@ class Ai:
                 directions = directions2
         return [list(directions), poss_directions[directions]]
 
-    def orthogonal_search(self, current_hits_copy: list[(int, int)] = None) -> None:
+    def orthogonal_search(self, current_hits_copy: list[(int, int)] = None,
+                          dirs_copy: list[int, int] = None) -> None:
         """Searches for ships orthogonal to a ship nested within a string of different ships."""
-        dirs_copy = self.directions.copy()
         if current_hits_copy is None:
             current_hits_copy = self.current_hits.copy()
+        if dirs_copy is None:
+            dirs_copy = self.directions.copy()
         results = [(self.orthogonal_dir(dirs_copy, hit), hit) for hit in current_hits_copy]
         for _ in range(len(current_hits_copy)):
             best_hit = max(results, key=lambda x: x[0][1])[1]
@@ -192,7 +194,7 @@ class Ai:
             self.directions = [(-1) * coord for coord in self.directions]
             if self.direction_changes > 1:
                 self.direction_changes = 0
-                self.orthogonal_search()
+                self.orthogonal_search(dirs_copy=self.directions.copy())
         if success:
             self.current_hits.append(coords)
             if not self.ship_found:
@@ -219,6 +221,7 @@ class Ai:
                                 self.standing_hits.append((x, y))
                     current_hits_copy = self.current_hits.copy()
                     standing_hits_copy = self.standing_hits.copy()
+                    dirs_copy = self.directions.copy()
                     for i, direction in enumerate(self.directions):
                         if direction != 0:
                             relative_coords = [coords[i] for coords in current_hits_copy]
@@ -236,11 +239,11 @@ class Ai:
                                         while you.board_copy[hit[1]][hit[0]] in self.sizes_not_sunk:
                                             self.attack()
                                     else:
-                                        self.orthogonal_search(current_hits_copy=[hit])
+                                        self.orthogonal_search(current_hits_copy=[hit], dirs_copy=dirs_copy)
                                 else:
-                                    self.orthogonal_search(current_hits_copy=[hit])
+                                    self.orthogonal_search(current_hits_copy=[hit], dirs_copy=dirs_copy)
                             else:
-                                self.orthogonal_search(current_hits_copy=[hit])
+                                self.orthogonal_search(current_hits_copy=[hit], dirs_copy=dirs_copy)
                 self.current_hits.clear()
                 self.standing_hits.clear()
                 self.directions.clear()
