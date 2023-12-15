@@ -16,3 +16,7 @@ def test_random_battleships(seed: int) -> None:
     while len(main.you.ships) > 0:
         main.ai.attack()
     assert True
+
+# for num in [1778, 2952, 5407, 5591, 5747, 5901, 6524, 7107, 8223, 12438,
+#             12670, 13348, 14466, 14738, 14828, 15882, 18695, 18717]:
+#     test_random_battleships(num)
