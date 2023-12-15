@@ -83,8 +83,8 @@ class Ai:
         if current_hits_copy is None:
             current_hits_copy = self.current_hits.copy()
         results = [(self.orthogonal_dir(dirs_copy, hit), hit) for hit in current_hits_copy]
-        for hit in current_hits_copy:
-            best_hit = max(results, key=lambda x: x[1])[1]
+        for _ in range(len(current_hits_copy)):
+            best_hit = max(results, key=lambda x: x[0][1])[1]
             results = [result for result in results if result[1] != best_hit]
             directions = self.orthogonal_dir(dirs_copy, best_hit)[0]
             next_attack = tuple(x + y for x, y in zip(best_hit, directions))
@@ -181,6 +181,7 @@ class Ai:
             self.current_hits = current_hits
         if directions is not None:
             self.directions = directions
+            self.direction_changes = 0
         if first_hit is not None:
             self.first_hit = first_hit
         num_ships_before = len(you.ships)
@@ -222,22 +223,23 @@ class Ai:
                             relative_coords = [coords[i] for coords in current_hits_copy]
                             ind = i
                     for hit in standing_hits_copy:
-                        if hit[ind] in (min(relative_coords), max(relative_coords)): # first/last?
-                            next_attack = list(hit)
-                            next_attack[ind] += 1 if hit[ind] == max(relative_coords) else -1
-                            next_attack = tuple(next_attack)
-                            if next_attack in self.poss_attacks:
-                                self.attack(next_attack, [hit], directions, hit)
-                                success1 = you.board_copy[next_attack[1]][next_attack[0]] is not None
-                                if success1:
-                                    while you.board_copy[hit[1]][hit[0]] in self.sizes_not_sunk:
-                                        self.attack()
+                        if you.board_copy[hit[1]][hit[0]] in self.sizes_not_sunk:
+                            if hit[ind] in (min(relative_coords), max(relative_coords)): # first/last?
+                                next_attack = list(hit)
+                                next_attack[ind] += 1 if hit[ind] == max(relative_coords) else -1
+                                next_attack = tuple(next_attack)
+                                if next_attack in self.poss_attacks:
+                                    self.attack(next_attack, [hit], directions, hit)
+                                    success1 = you.board_copy[next_attack[1]][next_attack[0]] is not None
+                                    if success1:
+                                        while you.board_copy[hit[1]][hit[0]] in self.sizes_not_sunk:
+                                            self.attack()
+                                    else:
+                                        self.orthogonal_search(current_hits_copy=[hit])
                                 else:
                                     self.orthogonal_search(current_hits_copy=[hit])
                             else:
                                 self.orthogonal_search(current_hits_copy=[hit])
-                        else:
-                            self.orthogonal_search(current_hits_copy=[hit])
                 self.current_hits.clear()
                 self.standing_hits.clear()
                 self.directions.clear()
