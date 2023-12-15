@@ -175,6 +175,7 @@ class Ai:
             if coords is None:
                 return
         else:
+            self.ship_found = True
             self.update_attacks(coords)
             self.update_probability_grid()
         if current_hits is not None:
