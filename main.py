@@ -49,7 +49,7 @@ class Ai:
             return 1
         return 0
 
-    def orthogonal_dir(self, directions: (int, int), at: (int, int)) -> [(int, int), int]:
+    def orth_dir(self, directions: (int, int), at: (int, int)) -> [(int, int), int]:
         """
         Returns a direction orthogonal to the attacking direction and
         the combinations of the next attack coordinates.
@@ -77,18 +77,18 @@ class Ai:
                 directions = directions2
         return [list(directions), poss_directions[directions]]
 
-    def orthogonal_search(self, current_hits_copy: list[(int, int)] = None,
+    def attack_orth(self, current_hits_copy: list[(int, int)] = None,
                           dirs_copy: list[int, int] = None) -> None:
-        """Searches for ships orthogonal to a ship nested within a string of different ships."""
+        """Attacks orthogonals to ships nested within a string of different ships."""
         if current_hits_copy is None:
             current_hits_copy = self.current_hits.copy()
         if dirs_copy is None:
             dirs_copy = self.directions.copy()
-        results = [(self.orthogonal_dir(dirs_copy, hit), hit) for hit in current_hits_copy]
-        for _ in range(len(current_hits_copy)):
+        results = [(self.orth_dir(dirs_copy, hit), hit) for hit in current_hits_copy]
+        for _ in current_hits_copy:
             best_hit = max(results, key=lambda x: x[0][1])[1]
             results = [result for result in results if result[1] != best_hit]
-            directions = self.orthogonal_dir(dirs_copy, best_hit)[0]
+            directions = self.orth_dir(dirs_copy, best_hit)[0]
             next_attack = tuple(x + y for x, y in zip(best_hit, directions))
             self.attack(next_attack, [best_hit], directions, best_hit)
             while you.board_copy[best_hit[1]][best_hit[0]] in self.sizes_not_sunk:
@@ -145,8 +145,8 @@ class Ai:
                     else:
                         x += self.directions[0]
                         y += self.directions[1]
-                    if abs(x) > len(you.board) - 1 or abs(y) > len(you.board) - 1:
-                        self.orthogonal_search()
+                    if any(abs(coord) > len(you.board) - 1 for coord in (x, y)):
+                        self.attack_orth()
                         return
                     count += 1
                 attack_coords = (x, y)
@@ -191,10 +191,10 @@ class Ai:
         success = game_engine.attack(coords, you.board, you.ships)
         if not success and len(self.directions) > 0:
             self.direction_changes += 1
-            self.directions = [(-1) * coord for coord in self.directions]
+            self.directions = [-coord for coord in self.directions]
             if self.direction_changes > 1:
                 self.direction_changes = 0
-                self.orthogonal_search(dirs_copy=self.directions.copy())
+                self.attack_orth(dirs_copy=self.directions.copy())
         if success:
             self.current_hits.append(coords)
             if not self.ship_found:
@@ -206,13 +206,13 @@ class Ai:
                 x_dir = self.dir(x_dif)
                 y_dir = self.dir(y_dif)
                 if (coords[0] + x_dir, coords[1] + y_dir) not in self.poss_attacks:
-                    x_dir = (-1) * x_dir
-                    y_dir = (-1) * y_dir
+                    x_dir = -x_dir
+                    y_dir = -y_dir
                 self.directions = [x_dir, y_dir]
             if len(you.ships) < num_ships_before:
                 length_sunk_ship = self.sizes_not_sunk[you.board_copy[coords[1]][coords[0]]]
                 del self.sizes_not_sunk[you.board_copy[coords[1]][coords[0]]]
-                if length_sunk_ship != len(self.current_hits):
+                if len(self.current_hits) > length_sunk_ship:
                     for (x, y) in self.current_hits:
                         if you.board_copy[y][x] == you.board_copy[coords[1]][coords[0]]:
                             self.done_hits.append((x, y))
@@ -239,11 +239,11 @@ class Ai:
                                         while you.board_copy[hit[1]][hit[0]] in self.sizes_not_sunk:
                                             self.attack()
                                     else:
-                                        self.orthogonal_search(current_hits_copy=[hit], dirs_copy=dirs_copy)
+                                        self.attack_orth(current_hits_copy=[hit], dirs_copy=dirs_copy)
                                 else:
-                                    self.orthogonal_search(current_hits_copy=[hit], dirs_copy=dirs_copy)
+                                    self.attack_orth(current_hits_copy=[hit], dirs_copy=dirs_copy)
                             else:
-                                self.orthogonal_search(current_hits_copy=[hit], dirs_copy=dirs_copy)
+                                self.attack_orth(current_hits_copy=[hit], dirs_copy=dirs_copy)
                 self.current_hits.clear()
                 self.standing_hits.clear()
                 self.directions.clear()
