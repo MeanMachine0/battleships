@@ -6,7 +6,7 @@ import random
 
 import main
 
-@pytest.mark.parametrize("seed", range(1000))
+@pytest.mark.parametrize("seed", range(6000))
 def test_random_battleships(seed: int) -> (int, list[list[str | None]]):
     """Tests the ai against a 'random' configuration, returning
     the number of attacks and the corresponding board."""
@@ -23,10 +23,14 @@ def test_random_battleships(seed: int) -> (int, list[list[str | None]]):
     assert True
     return (count, main.you.board_copy)
 
-# for num in [1778, 2952, 5407, 5591, 5747, 5901, 6524, 7107, 8223, 12438,
-#             12670, 13348, 14466, 14738, 14828, 15882, 18695, 18717]:
+for num in [5591, 5901, 6524, 7107, 8223, 12438,
+            12670, 13348, 14466, 14738, 14828, 15882, 18695, 18717]:
+    print(num)
+    test_random_battleships(num)
+    
 # results = []
 # for i in range(1000):
 #     results.append(test_random_battleships(i))
+
 # cols = ['num_attacks', 'board']
 # pd.DataFrame(data=results, columns=cols).to_csv('results.csv', index=False)
