@@ -25,8 +25,8 @@ def test_random_battleships(seed: int) -> (int, list[list[str | None]]):
 
 # for num in [1778, 2952, 5407, 5591, 5747, 5901, 6524, 7107, 8223, 12438,
 #             12670, 13348, 14466, 14738, 14828, 15882, 18695, 18717]:
-results = []
-for i in range(1000):
-    results.append(test_random_battleships(i))
-cols = ['num_attacks', 'board']
-pd.DataFrame(data=results, columns=cols).to_csv('results.csv', index=False)
+# results = []
+# for i in range(1000):
+#     results.append(test_random_battleships(i))
+# cols = ['num_attacks', 'board']
+# pd.DataFrame(data=results, columns=cols).to_csv('results.csv', index=False)
