@@ -1,6 +1,7 @@
 """Contains the functions for web implentation."""
 import copy
 import json
+import logging
 import random
 from flask import Flask, request, jsonify, redirect, render_template
 import components
@@ -39,7 +40,6 @@ class Ai:
         self.num_hits = 0
         self.attacks = []
         self.direction_changes = 0
-        random.seed(42)
 
     def dir(self, dif: int) -> int:
         """Returns the direction, given a difference in coordinates."""
@@ -264,11 +264,19 @@ def initialise_players() -> None:
     you.__init__()
     ai.__init__()
 
+def retry(warning: str):
+    """Regenerates the necessary components and retries the attacking algorithm."""
+    try:
+        logging.warning(warning)
+        # Restart, as the algorithm has random elements.
+        return placement_interface(redo_algorithm=True)
+    except RecursionError:
+        logging.warning('Attacking algorithm could not solve the board.')
+        return redirect('/placement')
+
 @app.route('/', methods=['GET'])
 def root():
-    """
-    Returns the main template, passing a player board to the template.
-    """
+    """Returns the main template, passing a player board to the template."""
     if len(ai.ships) == 0 or len(you.attacks) >= len(ai.attacks):
         return redirect('/placement')
     return render_template('main.html', player_board=you.board_copy)
@@ -300,7 +308,7 @@ def process_attack():
     return jsonify({'hit': hit, 'AI_Turn': ai_attack_coords})
 
 @app.route('/placement', methods=['GET', 'POST'])
-def placement_interface():
+def placement_interface(redo_algorithm=False):
     """
     Posts the player's board in the same format as placement.json and
     gets the placement template with the ships and board size.
@@ -311,10 +319,11 @@ def placement_interface():
                                ships=components.create_battleships(),
                                board_size=board_size
                               )
-    if request.method == 'POST':
-        placements_data = request.get_json()
-        with open('placement.json', 'w', encoding='utf-8') as placements_json:
-            json.dump(placements_data, placements_json, separators=(',', ':'))
+    if request.method == 'POST' or redo_algorithm:
+        if request.method == 'POST':
+            placements_data = request.get_json()
+            with open('placement.json', 'w', encoding='utf-8') as placements_json:
+                json.dump(placements_data, placements_json, separators=(',', ':'))
         initialise_players()
         for y in range(board_size):
             for x in range(board_size):
@@ -335,14 +344,14 @@ def placement_interface():
                     'accordingly to "placement.json".'
                 }
             )
-        ai.ships = components.create_battleships()
-        ai.board = components.place_battleships(
-            components.initialise_board(board_size),
-            ai.ships.copy(),
-            'random'
-        )
         while len(you.ships) > 0:
-            ai.attack()
+            try:
+                ai.attack()
+                logging.info('Attacking algorithm passed.')
+            except TypeError:
+                retry('Attacking algorithm failed - retrying...')
+            except Exception:
+                retry('Attacking algorithm failed (unknown error) - retrying...')
     return jsonify({'message': 'success'})
 
 if __name__ == '__main__':

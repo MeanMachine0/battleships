@@ -1,15 +1,15 @@
 """Tests for main.py."""
 import copy
 import random
-import pandas as pd
 import pytest
-
 import main
 
-@pytest.mark.parametrize("seed", range(5000))
-def test_random_battleships(seed: int) -> (int, list[list[str | None]]):
-    """Tests the ai against a 'random' configuration, returning
-    the number of attacks and the corresponding board."""
+# 4 failures in 100,000 random boards. But, in production, the algorithm restarts if it fails.
+# As the algorithm has random elements, it quickly solves the board in an alternate way.
+@pytest.mark.parametrize("seed", range(100000))
+def test_random_battleships(seed: int, return_data=False) -> (int, list[list[str | None]]):
+    """Tests the ai against a 'random' configuration,
+    potentially returning the number of attacks and the corresponding board."""
     random.seed(seed)
     main.initialise_players()
     for y in range(len(main.you.board)):
@@ -21,9 +21,5 @@ def test_random_battleships(seed: int) -> (int, list[list[str | None]]):
         main.ai.attack()
         count += 1
     assert True
-    return (count, main.you.board_copy)
-
-results = []
-for i in range(5000):
-    results.append(test_random_battleships(i))
-pd.DataFrame(data=results, columns=['num_attacks', 'board']).to_csv('results.csv', index=False)
+    if return_data:
+        return (count, main.you.board_copy)
