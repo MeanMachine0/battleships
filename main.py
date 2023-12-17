@@ -221,8 +221,9 @@ class Ai:
                 length_sunk_ship = self.sizes_not_sunk[ship_hit]
                 del self.sizes_not_sunk[ship_hit]
                 if len(self.current_hits) > length_sunk_ship:
+                    self.standing_hits.clear()
                     for (x, y) in self.current_hits:
-                        if you.board_copy[y][x] != ship_hit and (x, y) not in self.standing_hits:
+                        if you.board_copy[y][x] != ship_hit:
                             self.standing_hits.append((x, y))
                     current_hits_copy = self.current_hits.copy()
                     standing_hits_copy = self.standing_hits.copy()
@@ -238,7 +239,7 @@ class Ai:
                                 next_attack[coord_ind] += 1 if hit[coord_ind] == max(relative_coords) else -1
                                 next_attack = tuple(next_attack)
                                 if next_attack in self.poss_attacks:
-                                    self.attack(next_attack, [hit], directions, hit)
+                                    self.attack(next_attack, [hit], dirs_copy, hit)
                                     success1 = you.board_copy[next_attack[1]][next_attack[0]] is not None
                                     if success1:
                                         while you.board_copy[hit[1]][hit[0]] in self.sizes_not_sunk:
