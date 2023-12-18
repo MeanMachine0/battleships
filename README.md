@@ -32,6 +32,9 @@ Execute:
 - source .venv/bin/activate
 - pip install -r requirements.txt
 
+### For All, Afterwards
+Select the virtual environment's Python installation as your IDE's interpreter.
+
 ## Running and Using the Application
 ### CLI
 #### Simple Game
