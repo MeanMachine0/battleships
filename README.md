@@ -20,19 +20,19 @@
 - Install Python 3.11.4 and set it as your interpreter in your IDE.
 - When executing any commands mentioned, do so at the 'battleships' directory (project root directory).
 ## Virtual Environment Setup
-### Windows
+### For Windows
 Execute: 
 - python -m venv .venv
 - .venv\scripts\activate
 - pip install -r requirements.txt
 
-### MacOS/Linux
+### For MacOS/Linux
 Execute:
 - python3 -m venv .venv
 - source .venv/bin/activate
 - pip install -r requirements.txt
 
-### For All, Afterwards
+### For All Platforms, Afterwards
 - Select the virtual environment's Python installation as your IDE's interpreter.
 - Kill the terminal and open a new terminal before running any of the following commands.
 
