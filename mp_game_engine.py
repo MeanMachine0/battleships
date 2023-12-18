@@ -85,8 +85,9 @@ def game_over(won: bool):
             with open('ascii/you_lost.txt', 'r', encoding='utf-8') as you_lost:
                 message += f'{you_lost.read()}\n\n'
     return message
-
-if __name__ != '__main__':
+if __name__ == '__main__':
+    ai_opponent_game_loop()
+else:
     players['you']['ships'] = components.create_battleships()
     players['you']['board'] = components.place_battleships(
         board=components.initialise_board(),

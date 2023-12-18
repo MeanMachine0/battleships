@@ -1,13 +1,16 @@
-"""Contains the functions for web implentation."""
+"""Web implementation of battleships against a strong opponent."""
+import ast
 import copy
 import json
 import logging
 import random
 from flask import Flask, request, jsonify, redirect, render_template
+import pandas as pd
 import components
 import game_engine
 
 app = Flask(__name__)
+logging.basicConfig(filename='main.log', level=logging.INFO)
 
 class You:
     """A human player."""
@@ -34,12 +37,17 @@ class Ai:
         self.ship_found = False
         self.hits = []
         self.first_hit = ()
-        self.directions = []
+        self.directions = [] # [-1, 0] means left.
         self.current_hits = []
-        self.standing_hits = []
+        self.standing_hits = [] # Left over hits after sinking a ship.
         self.num_hits = 0
         self.attacks = []
         self.direction_changes = 0
+    def set_board(self) -> None:
+        """Generates and sets the AI's board."""
+        difficult_boards = pd.read_csv('difficult-boards.csv')
+        difficult_boards['board'] = difficult_boards['board'].apply(ast.literal_eval)
+        self.board = random.choice(difficult_boards['board'].values)
 
     def dir(self, dif: int) -> int:
         """Returns the direction, given a difference in coordinates."""
@@ -272,8 +280,9 @@ def retry(warning: str):
         return placement_interface(redo_algorithm=True)
     except RecursionError:
         logging.warning('Attacking algorithm could not solve the board.')
-        return redirect('/placement')
-
+        return render_template('placement.html',
+                                ships=components.create_battleships(),
+                                board_size=10)
 @app.route('/', methods=['GET'])
 def root():
     """Returns the main template, passing a player board to the template."""
@@ -317,8 +326,7 @@ def placement_interface(redo_algorithm=False):
     if request.method == 'GET':
         return render_template('placement.html',
                                ships=components.create_battleships(),
-                               board_size=board_size
-                              )
+                               board_size=board_size)
     if request.method == 'POST' or redo_algorithm:
         if request.method == 'POST':
             placements_data = request.get_json()
@@ -334,26 +342,28 @@ def placement_interface(redo_algorithm=False):
         you.board = components.place_battleships(
             components.initialise_board(board_size),
             you.ships.copy(),
-            'custom'
-        )
+            'custom')
         you.board_copy = copy.deepcopy(you.board)
+        test_len = sum(list(you.ships.values()))
+        sum_ship_lengths = sum(1 if val is not None else 0 for row in you.board for val in row)
+        if sum_ship_lengths != test_len:
+            logging.error('Invalid configuration: exactly five ships must be in "placement.json".')
+            return jsonify({'message': 'failure'})
         if you.board is None:
-            return jsonify(
-                {
-                    'message': 'Invalid configuration: could not place ships ' +
-                    'accordingly to "placement.json".'
-                }
-            )
-        while len(you.ships) > 0:
-            try:
+            logging.error('Invalid configuration: could not place ships ' +
+            'accordingly to "placement.json".')
+            return jsonify({'message': 'failure'})
+        try:
+            while len(you.ships) > 0:
                 ai.attack()
-                logging.info('Attacking algorithm passed.')
-            except TypeError:
-                retry('Attacking algorithm failed - retrying...')
-            except Exception:
-                retry('Attacking algorithm failed (unknown error) - retrying...')
+        except TypeError:
+            return retry('Attacking algorithm failed - retrying...')
+        except Exception:
+            return retry('Attacking algorithm failed (unknown error) - retrying...')
+        logging.info('Attacking algorithm passed.')
+        ai.set_board()
     return jsonify({'message': 'success'})
 
 if __name__ == '__main__':
     app.template_folder = 'templates'
-    app.run(debug=True)
+    app.run(debug=False)

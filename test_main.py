@@ -5,7 +5,7 @@ import pytest
 import main
 
 # 4 failures in 100,000 random boards. But, in production, the algorithm restarts if it fails.
-# As the algorithm has random elements, it quickly solves the board in an alternate way.
+# As the algorithm has random elements, it solves the board in an alternate way.
 @pytest.mark.parametrize("seed", range(100000))
 def test_random_battleships(seed: int, return_data=False) -> (int, list[list[str | None]]):
     """Tests the ai against a 'random' configuration,

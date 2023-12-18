@@ -3,7 +3,8 @@ import random
 import pytest
 import components
 
-@pytest.mark.parametrize("seed", range(999))
+# All passed
+@pytest.mark.parametrize("seed", range(100000))
 def test_random_battleships_sizes(seed: int) -> None:
     """
     Checks whether the correct number of each battleship
@@ -25,7 +26,8 @@ def test_random_battleships_sizes(seed: int) -> None:
                 ships_test[value] += 1
     assert ships_test == ships_checker
 
-@pytest.mark.parametrize("seed", range(999))
+# All passed
+@pytest.mark.parametrize("seed", range(100000))
 def test_random_battleships_adjacent(seed: int) -> None:
     """
     Checks whether each battleship placement is adjacent

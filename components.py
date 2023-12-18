@@ -1,5 +1,6 @@
 """Contains functions to setup the components of the game."""
 import json
+import logging
 import random
 
 def initialise_board(size=10) -> list[list[None]]:
@@ -49,34 +50,46 @@ def place_battleships(board: list[list[None]],
                             'random'
                         )
                     except RecursionError:
-                        print('Invalid configuration: the ships do not fit on the board.')
+                        logging.warning('Invalid configuration: the ships do not fit on the board.')
                         return None
                 placement = random.choice(possible_placements)
                 place_ship(board, name, size, placement)
                 del ships[name]
         case 'custom':
-            with open('placement.json', 'r', encoding='utf-8') as placements_json:
+            try:
+                placements_json = open('placement.json', 'r', encoding='utf-8')
                 placements = json.load(placements_json)
-                expected_ship_coverage = 0
-                for name, placement in placements.items():
-                    try:
-                        placement[0] = int(placement[0])
-                        placement[1] = int(placement[1])
-                        place_ship(board, name, ships[name], placement)
-                        expected_ship_coverage += ships[name]
-                    except IndexError:
-                        print('Invalid configuration: could not place ships',
-                              'accordingly to "placement.json".')
-                        return None
-                # Validates ship coverage:
-                ship_coverage = 0
-                for row in board:
-                    for value in row:
-                        if value is not None:
-                            ship_coverage += 1
-                if ship_coverage != expected_ship_coverage:
-                    print('Invalid configuration: two or more ships overlap.')
+            except FileNotFoundError:
+                logging.error('There is no file called "placement.json".')
+                return None
+            except json.decoder.JSONDecodeError:
+                logging.error('"placement.json" is not valid json.')
+                return None
+            expected_ship_coverage = 0
+            for name, placement in placements.items():
+                try:
+                    placement[0] = int(placement[0])
+                    placement[1] = int(placement[1])
+                    place_ship(board, name, ships[name], placement)
+                    expected_ship_coverage += ships[name]
+                except IndexError:
+                    logging.error('Invalid configuration: could not place ships ' +
+                            'accordingly to "placement.json".')
                     return None
+                except ValueError:
+                    logging.error('"placement.json" is of invalid coniguration. ' +
+                                  'Please use a dict with the names of the ships as keys and ' +
+                                  'the values as a list in the form [x, y, h | v].')
+                    return None
+            # Validates ship coverage:
+            ship_coverage = 0
+            for row in board:
+                for value in row:
+                    if value is not None:
+                        ship_coverage += 1
+            if ship_coverage != expected_ship_coverage:
+                logging.error('Invalid "placement.json" configuration: two or more ships overlap.')
+                return None
     return board
 
 def get_possible_placements(board, size) -> list[(int, int, str)]:
@@ -99,10 +112,16 @@ def place_ship(board: list[list[None | str]], name: str,
         if placement[0] + size > len(board):
             raise IndexError
         board[placement[1]][placement[0]:placement[0] + size] = [name] * size
-    else:
+    elif placement[2] == 'v':
         for y in range(placement[1], placement[1] + size):
             board[y][placement[0]] = name
+    else:
+        raise ValueError
 
 if __name__ == '__main__':
     import game_engine
+    logging.basicConfig(filename='components.log', level=logging.INFO)
     game_engine.simple_game_loop()
+    place_battleships(initialise_board(),
+                      create_battleships(),
+                      'custom')
