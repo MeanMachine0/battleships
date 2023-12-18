@@ -272,17 +272,6 @@ def initialise_players() -> None:
     you.__init__()
     ai.__init__()
 
-def retry(warning: str):
-    """Regenerates the necessary components and retries the attacking algorithm."""
-    try:
-        logging.warning(warning)
-        # Restart, as the algorithm has random elements.
-        return placement_interface(redo_algorithm=True)
-    except RecursionError:
-        logging.warning('Attacking algorithm could not solve the board.')
-        return render_template('placement.html',
-                                ships=components.create_battleships(),
-                                board_size=10)
 @app.route('/', methods=['GET'])
 def root():
     """Returns the main template, passing a player board to the template."""
@@ -317,7 +306,7 @@ def process_attack():
     return jsonify({'hit': hit, 'AI_Turn': ai_attack_coords})
 
 @app.route('/placement', methods=['GET', 'POST'])
-def placement_interface(redo_algorithm=False):
+def placement_interface(redo_algorithm=False, try_num=0):
     """
     Posts the player's board in the same format as placement.json and
     gets the placement template with the ships and board size.
@@ -357,9 +346,13 @@ def placement_interface(redo_algorithm=False):
             while len(you.ships) > 0:
                 ai.attack()
         except TypeError:
-            return retry('Attacking algorithm failed - retrying...')
-        except Exception:
-            return retry('Attacking algorithm failed (unknown error) - retrying...')
+            if try_num > 10:
+                logging.warning('The attacking algorithm completely failed. Compensating...')
+                ai.attacks.extend(list(ai.poss_attacks.keys()))
+            else:
+                logging.warning('Attacking algorithm failed %s times - retrying...', try_num + 1)
+                # Restart, as the algorithm has random elements.
+                return placement_interface(redo_algorithm=True, try_num=try_num + 1)
         logging.info('Attacking algorithm passed.')
         ai.set_board()
     return jsonify({'message': 'success'})

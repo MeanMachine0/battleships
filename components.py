@@ -50,7 +50,7 @@ def place_battleships(board: list[list[None]],
                             'random'
                         )
                     except RecursionError:
-                        logging.warning('Invalid configuration: the ships do not fit on the board.')
+                        logging.error('Invalid configuration: the ships cannot fit on the board.')
                         return None
                 placement = random.choice(possible_placements)
                 place_ship(board, name, size, placement)
