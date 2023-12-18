@@ -33,7 +33,8 @@ Execute:
 - pip install -r requirements.txt
 
 ### For All, Afterwards
-Select the virtual environment's Python installation as your IDE's interpreter.
+- Select the virtual environment's Python installation as your IDE's interpreter.
+- Kill the terminal and open a new terminal before running any of the following commands.
 
 ## Running and Using the Application
 ### CLI
