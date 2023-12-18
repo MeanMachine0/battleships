@@ -10,7 +10,8 @@ import components
 import game_engine
 
 app = Flask(__name__)
-logging.basicConfig(filename='main.log', level=logging.INFO)
+FORMAT = '%(levelname)s: %(asctime)s %(message)s'
+logging.basicConfig(filename='main.log', level=logging.INFO, format=FORMAT)
 
 class You:
     """A human player."""
@@ -242,14 +243,14 @@ class Ai:
                             coord_ind = i
                     for hit in standing_hits_copy:
                         if you.board_copy[hit[1]][hit[0]] in self.sizes_not_sunk:
-                            if hit[coord_ind] in (min(relative_coords), max(relative_coords)): # first/last?
+                            if hit[coord_ind] in (min(relative_coords), max(relative_coords)):
                                 next_attack = list(hit)
-                                next_attack[coord_ind] += 1 if hit[coord_ind] == max(relative_coords) else -1
+                                next_attack[coord_ind] += 1 if hit[coord_ind] ==\
+                                    max(relative_coords) else -1
                                 next_attack = tuple(next_attack)
                                 if next_attack in self.poss_attacks:
                                     self.attack(next_attack, [hit], dirs_copy, hit)
-                                    success1 = you.board_copy[next_attack[1]][next_attack[0]] is not None
-                                    if success1:
+                                    if you.board_copy[next_attack[1]][next_attack[0]] is not None:
                                         while you.board_copy[hit[1]][hit[0]] in self.sizes_not_sunk:
                                             self.attack()
                                     else:

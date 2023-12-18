@@ -120,7 +120,8 @@ def place_ship(board: list[list[None | str]], name: str,
 
 if __name__ == '__main__':
     import game_engine
-    logging.basicConfig(filename='components.log', level=logging.INFO)
+    FORMAT = '%(levelname)s: %(asctime)s %(message)s'
+    logging.basicConfig(filename='components.log', level=logging.INFO, format=FORMAT)
     game_engine.simple_game_loop()
     place_battleships(initialise_board(),
                       create_battleships(),
