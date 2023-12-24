@@ -76,7 +76,7 @@
                 } else {
                     //Change the colour of the div to blue if attack was a miss
                     let cell = document.getElementById('cell-' + x + '-' + y);
-                    cell.style.backgroundColor = 'lightblue';
+                    cell.style.backgroundColor = 'blue';
                 }
 
                 //process the AI turn coordinate tupple
@@ -122,11 +122,11 @@
                     let cell = document.getElementById('small-cell-' + j + '-' + i);
                     console.log(cell)
                     if (board[i][j] === null) {
-                        cell.style.backgroundColor = 'lightblue';
+                        cell.style.backgroundColor = 'black';
                     } else if (board[i][j] === 'hit') {
                         cell.style.backgroundColor = 'red';
                     } else {
-                        cell.style.backgroundColor = 'lightgrey';
+                        cell.style.backgroundColor = 'lightblue';
                     }
                 }
             }
